@@ -17,6 +17,13 @@
   // this to false, which takes the workers.dev URL down -- and until the apex
   // domain is attached, that URL is the only way to reach the site.
   "workers_dev": true,
+  // Custom Domains rather than Routes: Cloudflare owns the DNS record and the
+  // edge certificate for each hostname. A Route would still need a DNS record
+  // pointing at some origin, which is precisely what was returning 521 here.
+  "routes": [
+    { "pattern": "kinteras.app", "custom_domain": true },
+    { "pattern": "www.kinteras.app", "custom_domain": true }
+  ],
   "observability": { "enabled": true },
   "d1_databases": [
     {
