@@ -43,9 +43,9 @@ export function Privacy() {
 
         <h1 className="mt-8 text-4xl font-extrabold tracking-[-0.02em]">Privacy</h1>
         <p className="mt-4 leading-relaxed text-brand-ink-dim">
-          This page covers one thing: the email address you give us to be told when Kinteras
-          Early Access opens. There is no account, no tracking profile and no advertising
-          identifier behind it.
+          This page covers one thing: the email address you give us so we can write to you about
+          Kinteras. There is no account, no tracking profile and no advertising identifier behind
+          it.
         </p>
 
         <Section title="WHO COLLECTS IT">
@@ -78,14 +78,22 @@ export function Privacy() {
 
         <Section title="WHY">
           <p>
-            Solely to email you once, when Kinteras Early Access opens. That is the purpose you
-            consented to and it is the only thing your address will be used for. It is not sold,
-            rented or shared for anyone else&apos;s marketing.
+            To email you about Kinteras as it is built — how development is going — and to tell
+            you when Early Access opens. That is the purpose you consented to, and it is the only
+            thing your address is used for. It is never sold, rented or shared for anyone
+            else&apos;s marketing.
           </p>
           <p>
-            If we ever want to send you something else — development updates, news, offers — we
-            will ask you again, separately. Widening the purpose without asking is exactly what
-            the versioned consent below exists to prevent.
+            <span className="text-brand-ink">Every email carries an unsubscribe link</span>, and
+            one click is enough. You do not have to write to us, and you do not have to explain
+            why.
+          </p>
+          <p>
+            If we ever want to use your address for something outside that — commercial offers,
+            anything from another company — we will ask you again, separately. Widening the
+            purpose without asking is exactly what the versioned consent below exists to prevent:
+            people who signed up under an earlier, narrower wording keep that narrower wording,
+            and are not moved onto anything broader.
           </p>
         </Section>
 
@@ -96,11 +104,16 @@ export function Privacy() {
         <Section title="WHO ELSE TOUCHES IT">
           <p>
             <span className="text-brand-ink">Cloudflare, Inc.</span> — hosts this page, runs the
-            signup endpoint and stores the list in its D1 database. It also provides the
-            cookieless page-view counter we use to see how many people visit; that counter does
-            not identify individual visitors.
+            signup endpoint and stores the list in its D1 database, in its Western Europe region.
+            It also provides the cookieless page-view counter we use to see how many people
+            visit; that counter does not identify individual visitors.
           </p>
-          <p>No other processor has access to the list.</p>
+          <p>
+            <span className="text-brand-ink">Brevo (Sendinblue SA, France)</span> — sends the
+            emails and manages subscriptions and unsubscribes. Your address is stored on its
+            servers in the European Union.
+          </p>
+          <p>No one else has access to the list.</p>
         </Section>
 
         <Section title="YOUR RIGHTS">

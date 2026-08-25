@@ -1,4 +1,5 @@
-import { KNOWN_CONSENT_VERSIONS } from '../shared/consent';
+import { KNOWN_CONSENT_VERSIONS, MARKETING_CONSENT_VERSIONS } from '../shared/consent';
+import { addContactToBrevo } from './brevo';
 
 /**
  * The whole server side of the landing: one endpoint that records an email.
@@ -109,6 +110,31 @@ async function handleEarlyAccess(request: Request, env: Env): Promise<Response> 
     return json({ success: false, error: 'server_error' }, 500);
   }
 
+  // The mailing list is downstream of the record, never a precondition for it.
+  //
+  // Only wordings that actually promised ongoing email reach Brevo. Someone who
+  // signed up under a launch-notification-only version stays out of it, and
+  // that boundary is enforced here rather than left to whoever runs the next
+  // import.
+  if (MARKETING_CONSENT_VERSIONS.has(consentVersion)) {
+    const result = await addContactToBrevo(env, email);
+    if (result === 'synced') {
+      try {
+        await env.DB.prepare(
+          'UPDATE early_access_signup SET brevo_synced = 1 WHERE email = ?',
+        )
+          .bind(email)
+          .run();
+      } catch (err) {
+        // Worth a log, not an error response: the address is on both lists,
+        // only our bookkeeping of that fact is behind. A later resync will
+        // push it again, which Brevo treats as a no-op.
+        console.error('brevo_synced update failed', err);
+      }
+    }
+  }
+
+  // Whatever Brevo did, the signup is recorded and the visitor is on the list.
   return json({ success: true });
 }
 

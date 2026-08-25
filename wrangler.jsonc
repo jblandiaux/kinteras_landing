@@ -25,6 +25,12 @@
     { "pattern": "www.kinteras.app", "custom_domain": true }
   ],
   "observability": { "enabled": true },
+  "vars": {
+    // The Brevo list to add signups to. Not a secret; the API key is, and lives
+    // in `wrangler secret put BREVO_API_KEY`. With either missing the endpoint
+    // still records signups in D1 and simply skips the push.
+    "BREVO_LIST_ID": ""
+  },
   "d1_databases": [
     {
       "binding": "DB",

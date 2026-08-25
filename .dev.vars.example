@@ -1,0 +1,6 @@
+# Copy to .dev.vars for local development. .dev.vars is gitignored -- never
+# commit a real key.
+#
+# In production this is set with:
+#   npx wrangler secret put BREVO_API_KEY
+BREVO_API_KEY=

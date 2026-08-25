@@ -40,7 +40,9 @@ code that ships.
 | `npm run dev` | Vite + Worker + local D1 |
 | `npm run build` | Type-check, then build client and Worker into `dist/` |
 | `npm run deploy` | Build, then `wrangler deploy` |
-| `npm run db:local` / `db:remote` | Apply `schema.sql` |
+| `npm run db:local` / `db:remote` | Apply `schema.sql` (fresh database) |
+| `npm run db:migrate:local` / `:remote` | Apply `migrations/` to an existing database |
+| `npm run brevo:resync` | Push signups Brevo never received |
 | `npm run assets:prepare` | Regenerate images from their sources (see below) |
 
 ## The endpoint
@@ -55,6 +57,32 @@ It rejects a malformed address (`400 invalid_email`), an unknown consent version
 (`400 invalid_consent_version`), a non-POST (`405`) and an oversized body (`413`).
 A filled honeypot returns `200` and writes nothing.
 
+`BREVO_API_BASE` overrides the API origin so the consent boundary can be tested
+against a stub. Never set it in production.
+
+### The mailing list
+
+Signups go to **D1 first, Brevo second**. D1 is the list; Brevo is a copy that
+sends the emails. That ordering is what makes a Brevo outage a row to retry
+rather than a signup that silently never happened — and it means leaving Brevo
+costs an import, not the list.
+
+`brevo_synced` tracks what got through. Catch up whatever did not:
+
+```bash
+BREVO_API_KEY=xxx BREVO_LIST_ID=3 npm run brevo:resync
+```
+
+Configure it with `npx wrangler secret put BREVO_API_KEY` and by setting
+`BREVO_LIST_ID` in `wrangler.jsonc`. **With either missing the endpoint still
+works** — it records the signup and skips the push, so the site is never down
+because a third party is.
+
+Only the address and the list id are sent. Campaign data stays in D1 rather than
+being mirrored into Brevo attributes, which must be declared in the Brevo account
+first — an undeclared attribute 400s the whole call, which would leave every
+signup unsynced until someone noticed.
+
 ### Consent is versioned, and that is load-bearing
 
 `shared/consent.ts` holds the version string **and the exact sentence shown next
@@ -65,8 +93,14 @@ A `consent_version` column that nobody validates against a frozen text proves
 nothing. Do not hardcode the wording anywhere else, and do not edit a published
 entry — add a new one.
 
-Adding a purpose (news, dev updates, offers) means a new version **and asking
-again**. It is never a silent widening of what v1 signers agreed to.
+Adding a purpose means a new version **and asking again**. It is never a silent
+widening of what earlier signers agreed to.
+
+That rule is enforced in code, not prose: each history entry carries
+`coversMarketing`, and only versions marked true are ever pushed to Brevo.
+`early-access-v1` promised a single launch notification, so addresses consented
+under it never reach the mailing list — their `brevo_synced` stays 0 by design,
+not by failure. The resync script applies the same filter in SQL.
 
 ### Attribution
 

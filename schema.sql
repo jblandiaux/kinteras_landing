@@ -15,9 +15,19 @@ CREATE TABLE IF NOT EXISTS early_access_signup (
   utm_source      TEXT,
   utm_medium      TEXT,
   utm_campaign    TEXT,
-  consent_version TEXT NOT NULL
+  consent_version TEXT NOT NULL,
+  -- 0 until the address has been accepted by the mailing-list provider. Only
+  -- signups whose consent version covers marketing are ever pushed, so rows
+  -- consented under early-access-v1 stay at 0 by design, not by failure.
+  brevo_synced    INTEGER NOT NULL DEFAULT 0
 );
 
 -- Signups are read newest-first when exporting the list.
 CREATE INDEX IF NOT EXISTS idx_early_access_created_at
   ON early_access_signup (created_at DESC);
+
+-- Partial index: the interesting rows are the handful that still need pushing,
+-- not the whole list.
+CREATE INDEX IF NOT EXISTS idx_early_access_brevo_pending
+  ON early_access_signup (brevo_synced)
+  WHERE brevo_synced = 0;
