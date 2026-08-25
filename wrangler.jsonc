@@ -13,6 +13,10 @@
     // would be answered with index.html instead of reaching the Worker.
     "run_worker_first": ["/api/*"]
   },
+  // Explicit, not left to the default. Adding a `routes` entry silently flips
+  // this to false, which takes the workers.dev URL down -- and until the apex
+  // domain is attached, that URL is the only way to reach the site.
+  "workers_dev": true,
   "observability": { "enabled": true },
   "d1_databases": [
     {
