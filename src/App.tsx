@@ -3,6 +3,8 @@ import { Hero } from './components/Hero';
 import { GameplayLoop } from './components/GameplayLoop';
 import { FinalCta } from './components/FinalCta';
 import { Footer } from './components/Footer';
+import { ConsentBanner } from './components/ConsentBanner';
+import { initAnalytics } from './lib/analytics';
 import { Privacy } from './pages/Privacy';
 
 /** Loaded as its own chunk, after the page has painted. */
@@ -20,6 +22,10 @@ const loadMotionFeatures = () => import('./lib/motionFeatures').then((mod) => mo
  * `strict` makes the saving enforceable: importing a full `motion.*` component
  * anywhere would throw instead of silently pulling the whole library back in.
  */
+// Before first render, so the pageview is not missed. Capture itself is still
+// gated: nothing leaves the browser until the visitor answers the banner.
+initAnalytics();
+
 export function App() {
   if (window.location.pathname.replace(/\/+$/, '') === '/privacy') {
     return <Privacy />;
@@ -33,6 +39,7 @@ export function App() {
         <FinalCta />
       </main>
       <Footer />
+      <ConsentBanner />
     </LazyMotion>
   );
 }

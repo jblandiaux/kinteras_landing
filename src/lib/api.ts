@@ -12,15 +12,33 @@ export type Attribution = {
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
+  /** The individual piece of content — which video, not just which campaign. */
+  utm_content?: string;
+  referrer?: string;
+  landing_path?: string;
 };
+
+/**
+ * Captured once, when the module first loads.
+ *
+ * `document.referrer` is read at import time rather than at submit time: the
+ * Privacy page is a full navigation, so someone who reads it and comes back
+ * would otherwise be recorded as referred by our own site.
+ */
+const INITIAL_REFERRER = typeof document === 'undefined' ? '' : document.referrer;
+const INITIAL_PATH = typeof window === 'undefined' ? '' : window.location.pathname;
 
 export function readAttribution(search: string = window.location.search): Attribution {
   const params = new URLSearchParams(search);
   const attribution: Attribution = {};
-  for (const key of ['utm_source', 'utm_medium', 'utm_campaign'] as const) {
+  for (const key of ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'] as const) {
     const value = params.get(key)?.trim();
     if (value) attribution[key] = value.slice(0, 64);
   }
+  // Covers the traffic that arrives with no UTMs at all, which is most organic
+  // traffic — without them a bare referrer is all there is to go on.
+  if (INITIAL_REFERRER) attribution.referrer = INITIAL_REFERRER.slice(0, 512);
+  if (INITIAL_PATH) attribution.landing_path = INITIAL_PATH.slice(0, 512);
   return attribution;
 }
 

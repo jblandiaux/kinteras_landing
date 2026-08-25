@@ -2,8 +2,16 @@ import { useRef, useState, type FormEvent } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { CONSENT_TEXT } from '../../shared/consent';
 import { joinEarlyAccess, readAttribution } from '../lib/api';
+import { analytics } from '../lib/analytics';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
+
+/**
+ * Same permissive shape the Worker applies. Its job here is not validation --
+ * the server still decides -- but to keep obvious typos out of the
+ * submitted -> signup conversion ratio.
+ */
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 /**
  * The page's only conversion point.
@@ -25,13 +33,25 @@ export function EarlyAccessForm() {
     event.preventDefault();
     if (status === 'loading') return;
 
+    const trimmed = email.trim();
+
+    // Fires only once the input is plausibly an address, and never on the click
+    // itself. Counting every click would fill the submitted -> signup ratio with
+    // typos, and that ratio exists to expose network and backend failures.
+    if (!EMAIL_SHAPE.test(trimmed)) {
+      setStatus('error');
+      return;
+    }
+
+    analytics.capture('early_access_submitted');
     setStatus('loading');
     try {
       await joinEarlyAccess({
-        email: email.trim(),
+        email: trimmed,
         attribution: readAttribution(),
         honeypot: honeypotRef.current?.value ?? '',
       });
+      analytics.capture('early_access_signup');
       setStatus('success');
     } catch {
       // The typed email stays in state and therefore in the input -- making

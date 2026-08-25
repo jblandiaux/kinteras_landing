@@ -1,4 +1,5 @@
 import { m, useReducedMotion } from 'framer-motion';
+import { analytics } from '../lib/analytics';
 
 /**
  * The closing ask, for the visitor who needed to see the loop before deciding.
@@ -11,6 +12,10 @@ export function FinalCta() {
   const reducedMotion = useReducedMotion();
 
   function scrollToForm() {
+    // The page's only genuine call-to-action click: the hero form is visible
+    // from the start, so there is nothing to "open" up there.
+    analytics.capture('early_access_cta_clicked');
+
     document.getElementById('early-access')?.scrollIntoView({
       behavior: reducedMotion ? 'auto' : 'smooth',
       block: 'center',

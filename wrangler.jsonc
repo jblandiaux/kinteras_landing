@@ -11,7 +11,9 @@
     // Explicit rather than relying on the automatic navigation-header heuristic:
     // without it a request to /api/early-access that looks like a navigation
     // would be answered with index.html instead of reaching the Worker.
-    "run_worker_first": ["/api/*"]
+    // /summon/* is the PostHog reverse proxy. Without it listed here the SPA
+    // fallback would answer analytics requests with index.html.
+    "run_worker_first": ["/api/*", "/summon/*"]
   },
   // Explicit, not left to the default. Adding a `routes` entry silently flips
   // this to false, which takes the workers.dev URL down -- and until the apex

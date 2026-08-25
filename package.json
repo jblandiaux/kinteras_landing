@@ -10,13 +10,14 @@
     "deploy": "npm run build && wrangler deploy",
     "db:local": "wrangler d1 execute kinteras-landing --local --file=./schema.sql",
     "db:remote": "wrangler d1 execute kinteras-landing --remote --file=./schema.sql",
-    "db:migrate:local": "wrangler d1 execute kinteras-landing --local --file=./migrations/0001_add_brevo_synced.sql",
-    "db:migrate:remote": "wrangler d1 execute kinteras-landing --remote --file=./migrations/0001_add_brevo_synced.sql",
+    "db:migrate:local": "node scripts/migrate.mjs --local",
+    "db:migrate:remote": "node scripts/migrate.mjs --remote",
     "brevo:resync": "node scripts/resync-brevo.mjs",
     "assets:prepare": "node scripts/prepare-assets.mjs"
   },
   "dependencies": {
     "framer-motion": "^12",
+    "posthog-js": "^1.419.4",
     "react": "^19",
     "react-dom": "^19"
   },

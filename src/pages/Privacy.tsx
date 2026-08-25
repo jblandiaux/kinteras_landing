@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { CONSENT_HISTORY } from '../../shared/consent';
+import { clearConsent, readConsent } from '../lib/analytics';
 
 /**
  * BEFORE THE DOMAIN GOES LIVE, fill these in. They are the three facts a privacy
@@ -19,6 +21,46 @@ const RETENTION =
   'until Kinteras Early Access opens and the launch announcement has been sent, ' +
   'and in any case no longer than 24 months after you signed up — or sooner, ' +
   'as soon as you ask us to delete it';
+
+/**
+ * Withdrawal has to be as easy as consent, so this lives in the notice itself
+ * rather than only in the banner — which, by design, is gone once answered.
+ */
+function AnalyticsChoice() {
+  const [choice, setChoice] = useState(() => readConsent());
+
+  if (choice === null) {
+    return (
+      <p className="text-brand-ink">
+        You have not answered yet — the banner at the bottom of the page is waiting, and nothing
+        is being measured until you do.
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <p className="flex-1">
+        Your current choice:{' '}
+        <span className="text-brand-ink">
+          {choice === 'accepted' ? 'analytics accepted' : 'analytics declined'}
+        </span>
+        .
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          clearConsent();
+          setChoice(null);
+        }}
+        className="h-11 shrink-0 rounded-xl border border-brand-border-strong px-5 text-sm
+                   font-semibold text-brand-ink transition-colors hover:bg-brand-surface-alt"
+      >
+        Change my choice
+      </button>
+    </div>
+  );
+}
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -43,9 +85,9 @@ export function Privacy() {
 
         <h1 className="mt-8 text-4xl font-extrabold tracking-[-0.02em]">Privacy</h1>
         <p className="mt-4 leading-relaxed text-brand-ink-dim">
-          This page covers one thing: the email address you give us so we can write to you about
-          Kinteras. There is no account, no tracking profile and no advertising identifier behind
-          it.
+          Two things happen here: you can give us an email address so we can write to you about
+          Kinteras, and we measure which posts bring people to this page. There is no account and
+          no advertising identifier behind either.
         </p>
 
         <Section title="WHO COLLECTS IT">
@@ -71,8 +113,9 @@ export function Privacy() {
             <li>Which version of the notice below you agreed to.</li>
           </ul>
           <p>
-            We do not store your IP address, and we do not use cookies to identify you. Nothing
-            here is combined with data from anywhere else.
+            We do not store your IP address, and nothing here is combined with data from anywhere
+            else. Whether anything is stored on your device depends on the analytics choice
+            described below.
           </p>
         </Section>
 
@@ -101,12 +144,46 @@ export function Privacy() {
           <p>We keep your address {RETENTION}.</p>
         </Section>
 
+        <Section title="ANALYTICS AND COOKIES">
+          <p>
+            We measure which posts and links bring people to this page, so we know what is worth
+            making more of. We ask before doing it, and both answers are one click.
+          </p>
+          <p>
+            <span className="text-brand-ink">If you accept</span>, PostHog stores a cookie and a
+            local identifier so we can tell that two visits came from the same browser, and which
+            link brought you here the first time. That cookie is set on{' '}
+            <code className="text-brand-ink">.kinteras.app</code> so the choice you make here also
+            applies to the game once it launches.
+          </p>
+          <p>
+            <span className="text-brand-ink">If you decline</span>, nothing is stored on your
+            device at all. Your visit is still counted, using a short-lived identifier computed on
+            PostHog&apos;s servers that cannot be traced back to you or linked across days.
+          </p>
+          <p>
+            Either way we record no advertising identifier, we do not track you on other sites,
+            and we never sell any of it.
+          </p>
+          <p>
+            One further cookie is always set once you answer:{' '}
+            <code className="text-brand-ink">kinteras_analytics_consent</code>, which remembers
+            the answer itself. Without it we would have to ask again on every page.
+          </p>
+          <div className="mt-4 rounded-xl border border-brand-border/70 bg-brand-surface/40 px-4 py-4">
+            <AnalyticsChoice />
+          </div>
+        </Section>
+
         <Section title="WHO ELSE TOUCHES IT">
           <p>
             <span className="text-brand-ink">Cloudflare, Inc.</span> — hosts this page, runs the
             signup endpoint and stores the list in its D1 database, in its Western Europe region.
-            It also provides the cookieless page-view counter we use to see how many people
-            visit; that counter does not identify individual visitors.
+          </p>
+          <p>
+            <span className="text-brand-ink">PostHog</span> — the analytics described below.
+            We use their EU Cloud, so the data is stored in the European Union. PostHog is a US
+            company; their data processing agreement and standard contractual clauses cover that.
           </p>
           <p>
             <span className="text-brand-ink">Brevo (Sendinblue SA, France)</span> — sends the

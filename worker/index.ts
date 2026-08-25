@@ -1,5 +1,6 @@
 import { KNOWN_CONSENT_VERSIONS, MARKETING_CONSENT_VERSIONS } from '../shared/consent';
 import { addContactToBrevo } from './brevo';
+import { POSTHOG_PROXY_PREFIX, proxyToPostHog } from './posthog-proxy';
 
 /**
  * The whole server side of the landing: one endpoint that records an email.
@@ -12,8 +13,9 @@ import { addContactToBrevo } from './brevo';
 /** Longest legal email address per RFC 5321. */
 const MAX_EMAIL_LENGTH = 254;
 /** Nothing legitimate comes close; the cap just stops a body from being a DoS. */
-const MAX_BODY_BYTES = 2_048;
+const MAX_BODY_BYTES = 4_096;
 const MAX_UTM_LENGTH = 64;
+const MAX_URL_LENGTH = 512;
 
 /**
  * Deliberately permissive. Server-side regexes that try to be clever reject real
@@ -38,9 +40,9 @@ function json(body: unknown, status = 200): Response {
 }
 
 /** Trims, caps and strips control characters from an optional free-text field. */
-function cleanTag(value: unknown): string | null {
+function cleanTag(value: unknown, maxLength = MAX_UTM_LENGTH): string | null {
   if (typeof value !== 'string') return null;
-  const cleaned = value.replace(CONTROL_CHARS_RE, '').trim().slice(0, MAX_UTM_LENGTH);
+  const cleaned = value.replace(CONTROL_CHARS_RE, '').trim().slice(0, maxLength);
   return cleaned.length > 0 ? cleaned : null;
 }
 
@@ -85,16 +87,35 @@ async function handleEarlyAccess(request: Request, env: Env): Promise<Response> 
     return json({ success: false, error: 'invalid_consent_version' }, 400);
   }
 
+  // A repeat submission leaves the original row alone -- same email, same
+  // person, and the attribution recorded the first time is the one worth
+  // keeping -- with one exception: the consent version.
+  //
+  // Someone who signed up under a launch-notification-only wording and comes
+  // back under a broader one has genuinely agreed to more. Leaving the stored
+  // version at the older one makes the record understate what they consented
+  // to, and produces rows that read as "narrow consent, yet on the mailing
+  // list" to anyone auditing the table.
+  //
+  // The upgrade only ever widens: the WHERE clause refuses to overwrite a
+  // version that already covers marketing, so a stale tab submitting an old
+  // wording cannot narrow an existing record.
+  const marketingVersions = [...MARKETING_CONSENT_VERSIONS];
+  const upgradesConsent = marketingVersions.includes(consentVersion);
+  const conflictClause = upgradesConsent
+    ? `ON CONFLICT (email) DO UPDATE SET consent_version = excluded.consent_version
+         WHERE early_access_signup.consent_version NOT IN (${marketingVersions
+           .map(() => '?')
+           .join(', ')})`
+    : 'ON CONFLICT (email) DO NOTHING';
+
   try {
-    // ON CONFLICT DO NOTHING: re-submitting an address is a success from the
-    // visitor's point of view -- they wanted to be on the list and they are.
-    // It also means attribution stays first-touch, which is the honest reading
-    // of "where did this person come from".
     await env.DB.prepare(
       `INSERT INTO early_access_signup
-         (email, source, utm_source, utm_medium, utm_campaign, consent_version)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON CONFLICT (email) DO NOTHING`,
+         (email, source, utm_source, utm_medium, utm_campaign, utm_content,
+          referrer, landing_path, consent_version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ${conflictClause}`,
     )
       .bind(
         email,
@@ -102,7 +123,13 @@ async function handleEarlyAccess(request: Request, env: Env): Promise<Response> 
         cleanTag(body.utm_source),
         cleanTag(body.utm_medium),
         cleanTag(body.utm_campaign),
+        cleanTag(body.utm_content),
+        // Referrers and paths are longer than a campaign tag; MAX_URL_LENGTH
+        // keeps them usable without letting a crafted body bloat a row.
+        cleanTag(body.referrer, MAX_URL_LENGTH),
+        cleanTag(body.landing_path, MAX_URL_LENGTH),
         consentVersion,
+        ...(upgradesConsent ? marketingVersions : []),
       )
       .run();
   } catch (err) {
@@ -144,6 +171,13 @@ export default {
 
     if (pathname === '/api/early-access' || pathname === '/api/early-access/') {
       return handleEarlyAccess(request, env);
+    }
+
+    // Analytics traffic, served from our own origin so blockers see nothing
+    // they recognise. Checked before the /api 404 below because it is not an
+    // /api route at all.
+    if (pathname === POSTHOG_PROXY_PREFIX || pathname.startsWith(`${POSTHOG_PROXY_PREFIX}/`)) {
+      return proxyToPostHog(request, pathname);
     }
 
     // Reached only for /api/* (see run_worker_first). Answering 404 in JSON

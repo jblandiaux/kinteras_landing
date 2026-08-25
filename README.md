@@ -41,8 +41,8 @@ code that ships.
 | `npm run build` | Type-check, then build client and Worker into `dist/` |
 | `npm run deploy` | Build, then `wrangler deploy` |
 | `npm run db:local` / `db:remote` | Apply `schema.sql` (fresh database) |
-| `npm run db:migrate:local` / `:remote` | Apply `migrations/` to an existing database |
 | `npm run brevo:resync` | Push signups Brevo never received |
+| `npm run db:migrate:local` / `:remote` | Apply every file in `migrations/`, in order |
 | `npm run assets:prepare` | Regenerate images from their sources (see below) |
 
 ## The endpoint
@@ -146,8 +146,9 @@ Then, in the Cloudflare dashboard:
 2. **Rate limiting** — add a rule on `/api/early-access`. There is deliberately no
    application-level throttle: it would mean carrying state for an endpoint that
    writes one row, and the edge does it better.
-3. **Web Analytics** — enable it for the domain and paste the beacon snippet into
-   `index.html`. Cookieless, so it needs no consent banner.
+3. **Analytics** — nothing to do here. PostHog is wired in already; see the
+   Analytics section below. Cloudflare Web Analytics was never installed and is
+   not needed now that PostHog covers it.
 
 ### Before the domain goes live
 
@@ -158,6 +159,78 @@ inferred from the code:
 - `CONTROLLER` — who is legally answerable. Full name, or company + registration number.
 - `CONTACT` — a mailbox that is actually monitored on a domain you control.
 - `RETENTION` — how long an address is kept if Early Access never opens.
+
+## Analytics
+
+PostHog, EU Cloud, project **Kinteras — Production**. Four events, nothing else:
+
+| Event | When |
+| --- | --- |
+| `$pageview` | automatic |
+| `early_access_cta_clicked` | the closing CTA — the only real CTA click, the hero form is always visible |
+| `early_access_submitted` | after client-side validation, before the request |
+| `early_access_signup` | the Worker confirmed it |
+
+`submitted` minus `signup` is the network/backend failure rate. Firing `submitted`
+on the click instead would fill that ratio with typos and it would measure nothing.
+
+`autocapture` is off. Four named events answer the questions we have; recording
+every click would make this a second logging system.
+
+### D1 is the count, PostHog is the story
+
+PostHog will always report fewer signups than D1 — ad blockers, and visitors who
+never answer the banner. That gap is information, not a bug to fix. Never answer
+"how many people signed up" from PostHog.
+
+### Consent
+
+A banner, with both answers one click away. Accept and PostHog uses cookies as
+usual; decline and it switches to a server-side hash — no cookie, no local
+storage, the visit still counted. Before either, **nothing is captured at all**:
+that is `cookieless_mode: 'on_reject'` doing its job, not a broken install.
+
+The choice lives in a `kinteras_analytics_consent` cookie on `.kinteras.app`, not
+in localStorage, which is partitioned per origin and would ask again on
+`play.kinteras.app`.
+
+Two things about this are only discoverable by watching what reaches ingestion,
+and both are load-bearing:
+
+- **Accepting emits no pageview.** PostHog captured one at init, but capture was
+  still held then and it is never replayed. `setConsent` fires one explicitly, or
+  the funnel's first step reads zero for every first visit.
+- **Declining emits one by itself**, as part of switching to cookieless. Firing
+  ours there too double-counts every rejecting visitor. Hence the asymmetry in
+  `setConsent`.
+
+This depends on **cookieless server hash mode** being enabled on the PostHog
+project. Without it every declined-consent event is discarded at ingestion, with
+nothing in the browser to suggest anything is wrong.
+
+### Reverse proxy
+
+`/summon/*` on the Worker forwards to `eu.i.posthog.com`, and `/summon/static/*`
+to `eu-assets.i.posthog.com`. Served first-party, ad blockers see nothing they
+recognise. A path on the apex rather than a CNAME subdomain, because DNS-level
+blockers follow a subdomain's CNAME chain and a path has no chain to follow.
+
+Every proxied request is a Worker invocation, which is why feature flags,
+surveys, session replay and external dependency loading are all off in
+`src/lib/analytics.ts`.
+
+### First-touch, and why it is not in D1
+
+`readAttribution()` reads the URL **at submit time**, so the `utm_*` columns in D1
+record the attribution present when someone signed up — not their first ever
+visit. Someone who arrives from TikTok on Monday and signs up after a direct
+visit on Wednesday is stored as direct.
+
+PostHog's `$initial_utm_*` person properties would be true first-touch, but they
+are only set when a person profile exists, which anonymous visitors do not get by
+default — they come back null. The dashboards therefore break down by
+**event-level `utm_*`**, which is attached to every event of the session and works
+for declining visitors too.
 
 ## Unsubscribes vs. erasure requests
 
@@ -196,9 +269,9 @@ npx wrangler d1 execute kinteras-landing --remote \
   --command "SELECT email, created_at, utm_source FROM early_access_signup ORDER BY created_at DESC"
 ```
 
-Conversion rate is that row count against the Web Analytics page-view count. No
-event pipeline is wired up: `early_access_submit` and `video_visible` would be
-infrastructure built ahead of any traffic to justify it.
+That count is the authority. PostHog answers where those people came from, and
+its own signup number will be lower — see the Analytics section for why that is
+expected.
 
 ## Layout notes worth knowing before editing
 
