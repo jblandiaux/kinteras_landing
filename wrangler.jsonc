@@ -29,7 +29,7 @@
     // The Brevo list to add signups to. Not a secret; the API key is, and lives
     // in `wrangler secret put BREVO_API_KEY`. With either missing the endpoint
     // still records signups in D1 and simply skips the push.
-    "BREVO_LIST_ID": ""
+    "BREVO_LIST_ID": "6"
   },
   "d1_databases": [
     {

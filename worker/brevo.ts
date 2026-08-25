@@ -33,10 +33,27 @@ export type BrevoResult = 'synced' | 'skipped' | 'failed';
  * before the credentials exist and if they are ever removed.
  */
 export async function addContactToBrevo(env: Env, email: string): Promise<BrevoResult> {
-  const apiKey = env.BREVO_API_KEY;
-  const listId = Number(env.BREVO_LIST_ID);
+  // Trimmed: a key pasted with a stray space or newline authenticates as a
+  // different string and comes back 401, with nothing to distinguish it from a
+  // genuinely wrong key.
+  const apiKey = env.BREVO_API_KEY?.trim();
+  const rawListId = env.BREVO_LIST_ID?.trim() ?? '';
+  const listId = Number(rawListId);
+  const listIdIsValid = rawListId !== '' && Number.isInteger(listId) && listId > 0;
 
-  if (!apiKey || !Number.isFinite(listId) || listId <= 0) return 'skipped';
+  // Not configured at all is a legitimate state -- the endpoint is meant to work
+  // before Brevo exists. A key with an unusable list id is not: that is a typo,
+  // and skipping it quietly would drop every signup's push with nothing in the
+  // logs to say why. The Brevo UI labels lists "#6", which is exactly the value
+  // people paste in.
+  if (apiKey && !listIdIsValid) {
+    console.error(
+      `brevo misconfigured: BREVO_LIST_ID is ${JSON.stringify(rawListId)}, expected a positive integer`,
+    );
+    return 'failed';
+  }
+
+  if (!apiKey || !listIdIsValid) return 'skipped';
 
   try {
     const response = await fetch(contactsEndpoint(env), {
