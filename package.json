@@ -1,0 +1,33 @@
+{
+  "name": "kinteras-landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "cf-typegen": "wrangler types",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "db:local": "wrangler d1 execute kinteras-landing --local --file=./schema.sql",
+    "db:remote": "wrangler d1 execute kinteras-landing --remote --file=./schema.sql",
+    "assets:prepare": "node scripts/prepare-assets.mjs"
+  },
+  "dependencies": {
+    "framer-motion": "^12",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1",
+    "@tailwindcss/vite": "^4",
+    "@types/node": "^26.3.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6",
+    "sharp": "^0.35",
+    "tailwindcss": "^4",
+    "typescript": "~5.9",
+    "vite": "^8",
+    "wrangler": "^4"
+  }
+}

@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+/*
+ * Self-hosted rather than pulled from Google Fonts: the landing's whole job is
+ * to be fast, and a webfont on a third-party origin costs a DNS lookup plus a
+ * TLS handshake before the first byte of text can render. Latin subset only --
+ * the page is English.
+ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'MedievalSharp';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/medievalsharp-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
+/*
+ * The game's own Tailwind tokens, copied by value rather than imported: this
+ * repo is deliberately standalone. If the game's palette moves, these are the
+ * lines to update.
+ */
+@theme {
+  --color-brand-bg: #0c1230;
+  --color-brand-surface: #171f4a;
+  --color-brand-surface-alt: #1f2960;
+  --color-brand-border: #2a3580;
+  --color-brand-accent: #fbbf24;
+  --color-brand-accent-dim: #d97706;
+
+  /* Text. The secondary tone is a notch lighter than the usual #93a4b8 so it
+     clears AA against #0c1230 with margin rather than by a hair. */
+  --color-brand-ink: #f3f6fa;
+  --color-brand-ink-dim: #9fb0c4;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'MedievalSharp', ui-serif, serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    /* Anchor scrolling to the form should not jam it against the viewport edge. */
+    scroll-padding-top: 2rem;
+  }
+
+  body {
+    background-color: var(--color-brand-bg);
+    color: var(--color-brand-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* Two faint elemental washes, the same trick the game uses behind its
+       shell, so the page reads as part of that world rather than a flat slab. */
+    background-image:
+      radial-gradient(circle at 15% -5%, rgba(124, 58, 237, 0.22), transparent 55%),
+      radial-gradient(circle at 88% 22%, rgba(59, 130, 246, 0.18), transparent 50%);
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+  }
+
+  /* Visible keyboard focus everywhere, on the gold accent so it reads as part
+     of the design instead of a browser default someone forgot to style. */
+  :focus-visible {
+    outline: 2px solid var(--color-brand-accent);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@utility screen-reader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}

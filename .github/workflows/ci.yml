@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: types + build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - run: npm ci
+
+      # worker-configuration.d.ts is generated, not committed; the Worker's
+      # tsconfig depends on it, so this has to run before any type-check.
+      - name: Generate Worker types
+        run: npm run cf-typegen
+
+      # Covers the client, the Worker and the consent module they share, via the
+      # project references in tsconfig.json.
+      - name: Type-check
+        run: npx tsc -b
+
+      # A type-clean tree can still fail to bundle, and the bundle is what ships.
+      - name: Build
+        run: npm run build

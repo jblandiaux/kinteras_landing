@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+*.local
+.DS_Store
+
+# Regenerated from wrangler.jsonc by `npm run cf-typegen` (CI runs it before the
+# type-check). Half a megabyte of generated declarations that would churn on
+# every wrangler bump has no business in history.
+worker-configuration.d.ts

@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kinteras-landing",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-08-25",
+  "assets": {
+    // The landing is one HTML entry point; anything that is not a built file is
+    // rewritten to index.html so /privacy resolves on a cold load, not just on
+    // client-side navigation.
+    "not_found_handling": "single-page-application",
+    // Explicit rather than relying on the automatic navigation-header heuristic:
+    // without it a request to /api/early-access that looks like a navigation
+    // would be answered with index.html instead of reaching the Worker.
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": { "enabled": true },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kinteras-landing",
+      "database_id": "PLACEHOLDER_RUN_WRANGLER_D1_CREATE"
+    }
+  ]
+}
