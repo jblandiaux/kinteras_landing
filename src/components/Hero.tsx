@@ -41,12 +41,12 @@ export function Hero() {
      * pairing it with the default overflow-y: visible is legal, so nothing gets
      * clipped vertically.
      */
-    <section className="overflow-x-clip px-5 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
+    <section className="section-hero-light overflow-x-clip px-5 pt-8 pb-12 sm:px-6 md:pt-12 md:pb-20">
       <m.div
         variants={container}
         initial="hidden"
         animate="visible"
-        className="mx-auto grid max-w-[1100px] items-center gap-12
+        className="mx-auto grid max-w-[1100px] items-center gap-8
                    md:grid-cols-[minmax(0,1fr)_auto] md:gap-14"
       >
         <div className="text-center md:text-left">
@@ -84,10 +84,10 @@ export function Hero() {
             through the world.
           </m.p>
 
-          <m.div variants={item} className="mt-10 md:mt-12">
+          <m.div variants={item} className="mt-8 md:mt-12">
             <h2
               id="early-access"
-              className="font-display text-xl tracking-[0.18em] text-brand-accent"
+              className="font-display text-xl tracking-[0.08em] text-brand-accent"
             >
               JOIN THE EARLY ACCESS
             </h2>

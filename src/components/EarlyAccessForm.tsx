@@ -90,8 +90,22 @@ export function EarlyAccessForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           aria-describedby="early-access-consent early-access-status"
-          className="h-[54px] flex-1 rounded-[14px] border border-brand-border bg-brand-surface/80 px-5
-                     text-base text-brand-ink placeholder:text-brand-ink-dim/70
+          /*
+           * Enough material to read as an enabled control. With the resting
+           * border and a 70%-opacity placeholder it looked greyed out -- which
+           * on the page's only conversion point is the worst possible signal.
+           * It still stays clearly secondary to the gold button.
+           */
+          /*
+           * w-full stacked, flex-1 only once the wrapper is a row.
+           * A bare flex-1 sets flex-basis: 0% on whichever axis is the main one
+           * -- which in the mobile flex-col wrapper is the HEIGHT, silently
+           * overriding h-[54px] and collapsing the field to 22px against a
+           * 54px button.
+           */
+          className="h-[54px] w-full rounded-[14px] border border-brand-border-strong sm:flex-1
+                     bg-brand-surface/85 px-5 text-base text-brand-ink
+                     placeholder:text-brand-ink-dim/85
                      transition-colors focus:border-brand-accent/70 focus:outline-none
                      disabled:opacity-60"
         />

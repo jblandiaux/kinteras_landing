@@ -60,12 +60,39 @@ export function HeroVideo() {
 
   return (
     <div className="relative shrink-0">
-      {/* Elemental glow behind the frame, so the clip sits in the world rather
-          than on top of the page. Static -- a pulsing halo next to a moving
-          video is two things competing for the same attention. */}
+      {/*
+        Staging, in two layers, so the clip reads as "here is the product"
+        rather than as a video dropped onto the background.
+
+        A flat blurred rectangle was not enough: it fades uniformly and the
+        frame still looked isolated on a dark page. A radial falls off from the
+        centre of the device, and the ellipse underneath gives the frame
+        something to stand on.
+
+        Both are static. A halo that pulses next to a playing video is two
+        things competing for the same attention -- and the hero section's
+        overflow-x-clip is what lets them spill wider than the frame without
+        widening the document.
+
+        No blur filter on the ambient layer: a radial gradient is already a soft
+        falloff, and blurring it on top only spread the same light thinner until
+        it stopped registering against the dark page.
+
+        Every centre is kept well inside its box. A radial centred near an edge
+        is still at strength when the box ends, and the cut shows up as a hard
+        straight line across the page -- which is exactly what a halo must not
+        have.
+      */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-8 rounded-[3rem] bg-blue-500/20 blur-3xl"
+        className="pointer-events-none absolute -inset-x-20 -inset-y-14
+                   bg-[radial-gradient(56%_46%_at_50%_46%,rgba(59,130,246,0.5),transparent_70%),radial-gradient(42%_36%_at_28%_20%,rgba(139,92,246,0.42),transparent_68%)]"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-7 left-1/2 h-14 w-[135%]
+                   -translate-x-1/2 rounded-[50%] blur-xl
+                   bg-[radial-gradient(50%_50%_at_50%_50%,rgba(59,130,246,0.5),transparent_70%)]"
       />
 
       <div

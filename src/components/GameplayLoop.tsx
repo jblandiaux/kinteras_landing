@@ -42,7 +42,7 @@ export function GameplayLoop() {
       };
 
   return (
-    <section className="border-t border-brand-border/50 px-5 py-20 sm:px-6 md:py-28">
+    <section className="section-loop-light px-5 py-14 sm:px-6 md:py-20">
       <m.div
         initial="hidden"
         whileInView="visible"
@@ -54,15 +54,15 @@ export function GameplayLoop() {
       >
         <m.h2
           variants={step}
-          className="text-center font-display text-3xl tracking-[0.12em] text-brand-accent
-                     md:text-4xl"
+          className="text-center font-display text-[1.625rem] tracking-[0.07em]
+                     text-brand-accent md:text-[2rem]"
         >
           YOUR RUN. YOUR ADVENTURE.
         </m.h2>
 
         <ol
-          className="mt-14 flex flex-col items-center gap-0
-                     md:mt-16 md:flex-row md:items-start"
+          className="mt-10 flex flex-col items-center gap-0
+                     md:mt-12 md:flex-row md:items-start"
         >
           {STEPS.map((entry, index) => (
             <li
@@ -80,7 +80,7 @@ export function GameplayLoop() {
                  * of unshrinkable content inside a 752px row just above the md
                  * breakpoint, which scrolled the whole page sideways.
                  */
-                className="flex w-[168px] shrink-0 flex-col items-center gap-3 px-2 text-center
+                className="flex w-[168px] shrink-0 flex-col items-center gap-2.5 px-2 text-center
                            md:w-full md:min-w-0"
               >
                 <img
@@ -116,7 +116,7 @@ export function GameplayLoop() {
                 <m.span
                   aria-hidden="true"
                   variants={connector}
-                  className="my-4 block h-8 w-px shrink-0 origin-top
+                  className="my-3 block h-6 w-px shrink-0 origin-top
                              bg-gradient-to-b from-brand-accent/60 to-brand-accent/10
                              md:absolute md:top-10 md:my-0 md:h-px md:w-auto md:origin-left
                              md:left-[calc(50%+2.75rem)] md:right-[calc(-50%+2.75rem)]

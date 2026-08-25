@@ -24,7 +24,7 @@ export function FinalCta() {
   }
 
   return (
-    <section className="border-t border-brand-border/50 px-5 py-20 sm:px-6 md:py-24">
+    <section className="section-cta-light px-5 py-16 sm:px-6 md:py-20">
       <m.div
         initial={reducedMotion ? false : { opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}

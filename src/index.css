@@ -38,6 +38,9 @@
   --color-brand-surface: #171f4a;
   --color-brand-surface-alt: #1f2960;
   --color-brand-border: #2a3580;
+  /* Interactive borders. The resting border is tuned for panels sitting on the
+     page; on an input it reads as a disabled field, so controls get this one. */
+  --color-brand-border-strong: #35449a;
   --color-brand-accent: #fbbf24;
   --color-brand-accent-dim: #d97706;
 
@@ -62,13 +65,14 @@
     color: var(--color-brand-ink);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
-    /* Two faint elemental washes, the same trick the game uses behind its
-       shell, so the page reads as part of that world rather than a flat slab. */
-    background-image:
-      radial-gradient(circle at 15% -5%, rgba(124, 58, 237, 0.22), transparent 55%),
-      radial-gradient(circle at 88% 22%, rgba(59, 130, 246, 0.18), transparent 50%);
-    background-attachment: fixed;
-    background-repeat: no-repeat;
+    /*
+     * Flat on purpose. The washes used to live here with
+     * background-attachment: fixed, which pins them to the viewport -- so the
+     * same violet sat in the same corner through the whole scroll and every
+     * section ended up lit identically. Each section now carries its own light
+     * (see the .section-* utilities below), which is what makes the page read
+     * as a sequence of places rather than one long slab.
+     */
   }
 
   /* Visible keyboard focus everywhere, on the gold accent so it reads as part
@@ -95,4 +99,43 @@
   clip-path: inset(50%);
   white-space: nowrap;
   border-width: 0;
+}
+
+/*
+ * Per-section lighting. Kept as utilities rather than inline arbitrary values
+ * because these three are a set -- they are meant to be read, and adjusted,
+ * against each other.
+ */
+
+/* Hero: violet from the top-left, blue answering on the right. */
+@utility section-hero-light {
+  background-image:
+    radial-gradient(70% 55% at 12% -8%, rgba(124, 58, 237, 0.26), transparent 62%),
+    radial-gradient(55% 50% at 92% 18%, rgba(59, 130, 246, 0.2), transparent 58%);
+  background-repeat: no-repeat;
+}
+
+/* Loop: a shade deeper than the page, so the sequence feels like its own room.
+   A long ramp on both ends rather than a flat fill -- nothing separates this
+   section from the hero but this light, so its onset must not be locatable. */
+@utility section-loop-light {
+  background-image: linear-gradient(
+    180deg,
+    rgba(4, 7, 20, 0) 0%,
+    rgba(4, 7, 20, 0.62) 38%,
+    rgba(4, 7, 20, 0.62) 66%,
+    rgba(4, 7, 20, 0) 100%
+  );
+}
+
+/* Final CTA: light comes back up behind the closing ask.
+   Both centres sit far enough inside the box that each gradient has reached
+   full transparency before the edge. Centred at 20% with a 60% radius, the
+   violet was still at half strength where the section began and drew a hard
+   line across the page. */
+@utility section-cta-light {
+  background-image:
+    radial-gradient(58% 70% at 50% 58%, rgba(59, 130, 246, 0.2), transparent 68%),
+    radial-gradient(46% 58% at 26% 46%, rgba(124, 58, 237, 0.18), transparent 66%);
+  background-repeat: no-repeat;
 }
