@@ -31,7 +31,17 @@ export function Hero() {
       };
 
   return (
-    <section className="px-5 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
+    /*
+     * overflow-x-clip contains the video's decorative glow. Its -inset-8 (32px)
+     * always exceeds the section's 20-24px padding, so wherever the video column
+     * sits flush against the container edge the halo pushed the document wider
+     * than the viewport and the whole page scrolled sideways.
+     *
+     * `clip` rather than `hidden`: it does not create a scroll container, and
+     * pairing it with the default overflow-y: visible is legal, so nothing gets
+     * clipped vertically.
+     */
+    <section className="overflow-x-clip px-5 pt-8 pb-16 sm:px-6 md:pt-12 md:pb-24">
       <m.div
         variants={container}
         initial="hidden"

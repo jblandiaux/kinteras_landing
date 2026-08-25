@@ -32,7 +32,7 @@ npm run dev
 
 `npm run dev` serves the page **and** runs the Worker with a real local D1
 binding, courtesy of `@cloudflare/vite-plugin` — there is no proxy and no second
-process to start. `http://localhost:5173/api/early-access` exercises the exact
+process to start. `http://localhost:5273/api/early-access` exercises the exact
 code that ships.
 
 | Command | What it does |

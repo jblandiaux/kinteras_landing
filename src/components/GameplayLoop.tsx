@@ -62,16 +62,26 @@ export function GameplayLoop() {
 
         <ol
           className="mt-14 flex flex-col items-center gap-0
-                     md:mt-16 md:flex-row md:items-start md:justify-between"
+                     md:mt-16 md:flex-row md:items-start"
         >
           {STEPS.map((entry, index) => (
             <li
               key={entry.label}
-              className="flex flex-col items-center md:flex-1 md:flex-row md:items-start"
+              /* basis-0 via flex-1 makes every column the same width whatever
+                 its label wraps to, which is what lets the connector below be
+                 positioned from column centres. */
+              className="relative flex flex-col items-center md:flex-1"
             >
               <m.div
                 variants={step}
-                className="flex w-[168px] shrink-0 flex-col items-center gap-3 text-center"
+                /*
+                 * Fixed width stacked vertically, column width once side by
+                 * side. Keeping the 168px box on desktop meant 5 x 168 = 840px
+                 * of unshrinkable content inside a 752px row just above the md
+                 * breakpoint, which scrolled the whole page sideways.
+                 */
+                className="flex w-[168px] shrink-0 flex-col items-center gap-3 px-2 text-center
+                           md:w-full md:min-w-0"
               >
                 <img
                   src={entry.icon}
@@ -89,12 +99,27 @@ export function GameplayLoop() {
               </m.div>
 
               {index < STEPS.length - 1 && (
+                /*
+                 * Vertical and in flow on mobile; on desktop it is taken out of
+                 * flow and anchored between two badge centres.
+                 *
+                 * In flow it could only ever start at the edge of the 168px
+                 * label box, ~50px clear of the badge it is supposed to touch,
+                 * and it needed a magic top margin to guess the badge's
+                 * half-height. Here `left: 50% + 2.75rem` leaves this badge and
+                 * `right: -50% + 2.75rem` reaches the next column's centre and
+                 * stops just short of its badge, so the line meets the artwork
+                 * at both ends and stays put whatever the labels do.
+                 *
+                 * top-10 is the badge's own half-height (md:h-[80px]).
+                 */
                 <m.span
                   aria-hidden="true"
                   variants={connector}
                   className="my-4 block h-8 w-px shrink-0 origin-top
                              bg-gradient-to-b from-brand-accent/60 to-brand-accent/10
-                             md:my-0 md:mt-10 md:h-px md:w-full md:origin-left
+                             md:absolute md:top-10 md:my-0 md:h-px md:w-auto md:origin-left
+                             md:left-[calc(50%+2.75rem)] md:right-[calc(-50%+2.75rem)]
                              md:bg-gradient-to-r md:from-brand-accent/50 md:to-brand-accent/15"
                 />
               )}
