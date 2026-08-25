@@ -219,6 +219,30 @@ Every proxied request is a Worker invocation, which is why feature flags,
 surveys, session replay and external dependency loading are all off in
 `src/lib/analytics.ts`.
 
+### Findings from production
+
+Established by measuring, not by reading the docs. Each is one line of code that
+a well-meaning simplification would break, with no test or type to catch it.
+
+- Use **event-level `utm_*`** for anonymous acquisition reporting.
+- Do **not** rely on `$initial_utm_*` for anonymous visitors — they are person
+  properties, and anonymous visitors have no person profile.
+- The **accept/reject pageview behaviour is asymmetric** and is handled in
+  `analytics.ts`. Do not "simplify" the two branches into one.
+- **D1 attribution and consent state update differently**: the first signup's
+  attribution is immutable, the consent version widens.
+- The **PostHog SDK must stay lazily loaded**.
+- **localhost is excluded** from production insights by the project's test
+  account filter.
+
+Two configuration traps worth writing down: `opt_out_capturing_persistence_type`
+takes `'cookie'` singular (the docs publish `'cookies'`, which does not compile),
+and **cookieless server hash mode must stay enabled on the PostHog project** or
+every declined-consent event is discarded at ingestion.
+
+The full picture, including the app side, is in
+`Kinetra_backend/docs/11-analytics.md`.
+
 ### First-touch, and why it is not in D1
 
 `readAttribution()` reads the URL **at submit time**, so the `utm_*` columns in D1

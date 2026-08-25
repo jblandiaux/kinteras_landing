@@ -1,5 +1,12 @@
 import type { PostHog } from 'posthog-js';
 
+import {
+  buildConsentClearCookie,
+  buildConsentCookie,
+  parseConsent,
+  type ConsentChoice,
+} from './analyticsConsent';
+
 /**
  * The only place this app talks to PostHog.
  *
@@ -30,54 +37,16 @@ const POSTHOG_KEY = 'phc_ro2bcZi7fMUZwNdCiroUhqeBVwexhhdA7Hdi4ouUyrw8';
  */
 const PROXY_PATH = '/summon';
 
-export type ConsentChoice = 'accepted' | 'rejected';
+export type { ConsentChoice } from './analyticsConsent';
 
-const CONSENT_COOKIE = 'kinteras_analytics_consent';
-
-/**
- * Six months, the period beyond which a consent should be asked again rather
- * than assumed to still hold.
- */
-const CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 182;
-
-/**
- * The choice lives in a cookie on the registrable domain, not in localStorage.
- *
- * localStorage is partitioned per origin, so a choice made on kinteras.app would
- * be invisible to play.kinteras.app and the person would be asked twice for the
- * same thing. A cookie scoped to `.kinteras.app` is read by both.
- *
- * Storing a privacy preference is functional storage: remembering that someone
- * said no is not something you need their permission for.
- */
-function consentCookieDomain(): string | null {
-  const { hostname } = window.location;
-  if (hostname === 'kinteras.app' || hostname.endsWith('.kinteras.app')) return '.kinteras.app';
-  // localhost and *.workers.dev get a host-only cookie. A Domain attribute that
-  // does not match the current host is rejected outright by the browser, which
-  // would silently break consent in development.
-  return null;
+function isSecure(): boolean {
+  return window.location.protocol === 'https:';
 }
 
+/** Reads the stored answer, or null when the visitor has not answered yet. */
 export function readConsent(): ConsentChoice | null {
-  const match = document.cookie.match(
-    new RegExp(`(?:^|;\\s*)${CONSENT_COOKIE}=(accepted|rejected)(?:;|$)`),
-  );
-  return match ? (match[1] as ConsentChoice) : null;
-}
-
-function writeConsent(choice: ConsentChoice): void {
-  const domain = consentCookieDomain();
-  const parts = [
-    `${CONSENT_COOKIE}=${choice}`,
-    'Path=/',
-    `Max-Age=${CONSENT_MAX_AGE_SECONDS}`,
-    'SameSite=Lax',
-  ];
-  if (domain) parts.push(`Domain=${domain}`);
-  // Secure is rejected on plain http, which is what local development uses.
-  if (window.location.protocol === 'https:') parts.push('Secure');
-  document.cookie = parts.join('; ');
+  const state = parseConsent(document.cookie);
+  return state === 'pending' ? null : state;
 }
 
 let client: PostHog | null = null;
@@ -176,7 +145,7 @@ export function initAnalytics(): void {
  * init runs, so PostHog handles the pageview itself.
  */
 export function setConsent(choice: ConsentChoice): void {
-  writeConsent(choice);
+  document.cookie = buildConsentCookie(choice, window.location.hostname, isSecure());
   applyConsent(choice);
   if (choice === 'accepted') withClient((ph) => ph.capture('$pageview'));
 }
@@ -190,11 +159,7 @@ export function setConsent(choice: ConsentChoice): void {
  * do nothing for whoever closes the tab first.
  */
 export function clearConsent(): void {
-  const domain = consentCookieDomain();
-  const parts = [`${CONSENT_COOKIE}=`, 'Path=/', 'Max-Age=0', 'SameSite=Lax'];
-  if (domain) parts.push(`Domain=${domain}`);
-  if (window.location.protocol === 'https:') parts.push('Secure');
-  document.cookie = parts.join('; ');
+  document.cookie = buildConsentClearCookie(window.location.hostname, isSecure());
   withClient((ph) => ph.opt_out_capturing());
 }
 
