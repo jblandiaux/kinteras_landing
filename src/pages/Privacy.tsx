@@ -13,11 +13,12 @@ import { CONSENT_HISTORY } from '../../shared/consent';
  * They are gathered here rather than scattered through the prose so that filling
  * them in is one edit, not a hunt.
  */
-const CONTROLLER = 'TO BE COMPLETED — full name or company name + registration number';
-const CONTACT = 'privacy@kinteras.app';
+const CONTROLLER = 'Jonathan Blandiaux';
+const CONTACT = 'privacy@kinteras.com';
 const RETENTION =
-  'until Kinteras Early Access opens and the launch announcement has been sent, and at most ' +
-  '12 months after that — or sooner, as soon as you ask us to delete it';
+  'until Kinteras Early Access opens and the launch announcement has been sent, ' +
+  'and in any case no longer than 24 months after you signed up — or sooner, ' +
+  'as soon as you ask us to delete it';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
