@@ -159,6 +159,36 @@ inferred from the code:
 - `CONTACT` — a mailbox that is actually monitored on a domain you control.
 - `RETENTION` — how long an address is kept if Early Access never opens.
 
+## Unsubscribes vs. erasure requests
+
+Two different things, and conflating them is how a deletion request ends up
+half-honoured.
+
+**Unsubscribing is automatic and involves no mailbox.** Every campaign carries a
+Brevo unsubscribe link; one click marks the contact unsubscribed on Brevo's side.
+Nothing is emailed to anyone, and nothing needs doing. Note that this stops the
+*sending* only — the D1 row stays, which is correct: the record of who consented
+to what, and when, is exactly what accountability requires.
+
+Re-running `brevo:resync` cannot resurrect them: it only considers rows still
+marked unsynced, and Brevo's blocklist is separate from list membership, so
+re-adding a blocklisted address does not resubscribe it.
+
+**An erasure request is a person writing to the privacy address**, and it has to
+be honoured in *both* systems. Brevo alone is not enough — the address is still
+in D1.
+
+```bash
+# 1. Brevo: delete the contact (dashboard, or the API).
+# 2. D1: remove the row.
+npx wrangler d1 execute kinteras-landing --remote \
+  --command "DELETE FROM early_access_signup WHERE email = 'them@example.com'"
+```
+
+Deleting the D1 row also deletes the proof of their consent — which is the right
+trade: once they have asked to be forgotten, keeping a record *about* them to
+prove they once agreed is no longer a purpose you can justify.
+
 ## Reading the list
 
 ```bash
