@@ -159,62 +159,26 @@ const og = await sharp(backdrop).composite(layers).png({ compressionLevel: 9 }).
 console.log(`  og.png: ${og.width}x${og.height}, ${(og.size / 1024).toFixed(1)} KB`);
 
 // 4. Gameplay loop icons -------------------------------------------------
-// The game's achievement-category emblems, the same art the app shows today, so
-// the loop on the page matches what a player meets in the game. Explore uses the
-// compass (discovery) rather than the globe (world): it reads as "go further".
-const GAME_ASSETS =
-  process.env.SOURCE_GAME_ASSETS ?? '../Kinetra_frontend/public/assets';
-const CATEGORY = `${GAME_ASSETS}/achievements/category`;
+// A blue-and-gold set drawn for the web (runner, chest, creature, swords,
+// compass), kept in assets-src/loop/ as 256px transparent PNGs. They live here
+// rather than in the game's folder because the landing is standalone.
+const LOOP_SRC = 'assets-src/loop';
+const LOOP_ICONS = ['run', 'loot', 'creatures', 'fight', 'explore'];
 
-const LOOP_ICONS = [
-  ['run', 'running.png'],
-  ['loot', 'mastery.png'],
-  ['creatures', 'beasts.png'],
-  ['fight', 'combat.png'],
-  ['explore', 'discovery.png'],
-];
-
-/**
- * combat.png ships flattened onto opaque green while every sibling has alpha.
- * Keying it beats falling back to combat_old.png, which is the same badge at
- * half the resolution and visibly duller. Safe here because the artwork
- * contains no green at all, so nothing but the backdrop matches.
- */
-async function keyOutFlatBackground(file) {
-  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-  const { width, height, channels } = info;
-  if (channels !== 4) throw new Error(`expected RGBA from ${file}`);
-
-  // The top-left pixel is backdrop by construction on a centred badge.
-  const [br, bg, bb] = [data[0], data[1], data[2]];
-  const NEAR = 46; // keys the flat fill and its antialiased fringe, nothing else
-  const FAR = 92;
-
-  for (let i = 0; i < data.length; i += 4) {
-    const d = Math.hypot(data[i] - br, data[i + 1] - bg, data[i + 2] - bb);
-    if (d <= NEAR) data[i + 3] = 0;
-    else if (d < FAR) data[i + 3] = Math.round(((d - NEAR) / (FAR - NEAR)) * data[i + 3]);
-  }
-  return sharp(data, { raw: { width, height, channels: 4 } }).png().toBuffer();
-}
-
-for (const [name, file] of LOOP_ICONS) {
-  const src = `${CATEGORY}/${file}`;
-  const meta = await sharp(src).metadata();
-  const input = meta.hasAlpha ? await sharp(src).toBuffer() : await keyOutFlatBackground(src);
-
-  // 192px for a badge that renders at 64-72px: covers 3x without carrying a
-  // 1254px source into the bundle.
-  const info = await sharp(input)
+for (const name of LOOP_ICONS) {
+  // 192px for an icon that renders at 64-96 CSS px: covers 2x at the largest
+  // size and 3x on phones.
+  const info = await sharp(`${LOOP_SRC}/${name}.png`)
     .trim({ threshold: 1 })
-    .resize({ width: 192, height: 192, fit: 'inside' })
+    .resize({ width: 192, height: 192, fit: 'inside', withoutEnlargement: true })
     .webp({ quality: 86, effort: 6 })
     .toFile(`public/assets/icons/${name}.webp`);
-  console.log(
-    `  icons/${name}.webp: ${info.width}x${info.height}, ${(info.size / 1024).toFixed(1)} KB` +
-      (meta.hasAlpha ? '' : ' (keyed)'),
-  );
+  console.log(`  icons/${name}.webp: ${info.width}x${info.height}, ${(info.size / 1024).toFixed(1)} KB`);
 }
+
+// Game art below is read straight from the game's public assets.
+const GAME_ASSETS =
+  process.env.SOURCE_GAME_ASSETS ?? '../Kinetra_frontend/public/assets';
 
 // 5. Game art for the content sections -----------------------------------
 // Scenes, zone banners, creatures and element glyphs, all straight from the

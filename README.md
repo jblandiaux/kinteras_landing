@@ -159,12 +159,12 @@ who returns from a different campaign keeps the campaign they first arrived on.
 ## Assets
 
 `npm run assets:prepare` regenerates `public/` images from two sources: the
-wordmark in `assets-src/`, and the game's own art under
+wordmark and the loop icons in `assets-src/`, and the game's own art under
 `Kinetra_frontend/public/assets` (path overridable via `SOURCE_GAME_ASSETS`):
 
 | Output | Game source |
 | --- | --- |
-| `assets/icons/*.webp` (the loop) | `achievements/category/` — running, mastery, beasts, combat, discovery |
+| `assets/icons/*.webp` (the loop) | `assets-src/loop/` in this repo — 256px set drawn for the web |
 | `assets/scenes/night-road.webp` | `backgrounds/quest_hero.png` (hero and closing CTA) |
 | `assets/scenes/world-map.webp` | `backgrounds/zones/Kinteras_WorldMap.png` |
 | `assets/zones/*.webp` | `backgrounds/zones/banner/` |
