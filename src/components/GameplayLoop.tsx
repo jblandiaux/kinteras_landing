@@ -1,131 +1,88 @@
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { REVEAL_VIEWPORT, useRevealVariants } from '../lib/reveal';
+import { SectionHeading } from './SectionHeading';
 
 /**
- * The five badges are the game's own achievement-category art: one consistent
- * gold-framed hexagon family, which sits with the wordmark far better than the
- * flat nav icons would.
+ * The five emblems are the game's own achievement-category art (regenerated
+ * by `npm run assets:prepare`), so the loop matches what a player meets in-app.
  */
 const STEPS = [
-  { icon: '/assets/icons/run.webp', label: 'RUN' },
-  { icon: '/assets/icons/loot.webp', label: 'EARN XP & LOOT' },
-  { icon: '/assets/icons/creatures.webp', label: 'DISCOVER CREATURES' },
-  { icon: '/assets/icons/fight.webp', label: 'FIGHT' },
-  { icon: '/assets/icons/explore.webp', label: 'EXPLORE' },
+  { icon: '/assets/icons/run.webp', label: 'RUN', detail: 'Any run, any pace.' },
+  { icon: '/assets/icons/loot.webp', label: 'EARN XP & LOOT', detail: 'Every kilometre counts.' },
+  {
+    icon: '/assets/icons/creatures.webp',
+    label: 'DISCOVER CREATURES',
+    detail: 'Summon. Collect. Evolve.',
+  },
+  { icon: '/assets/icons/fight.webp', label: 'FIGHT', detail: 'Element versus element.' },
+  { icon: '/assets/icons/explore.webp', label: 'EXPLORE', detail: 'Push deeper into the map.' },
 ] as const;
 
 /**
  * The core loop, shown rather than described.
  *
- * Vertical on phones, horizontal from md up, with the connector drawn between
- * steps so the sequence reads as a cycle instead of five unrelated tiles.
+ * Rows on phones (emblem beside its caption, so five steps fit one screen),
+ * five columns from md up with a gold thread through the emblems so the
+ * sequence reads as one path instead of five tiles.
  */
 export function GameplayLoop() {
-  const reducedMotion = useReducedMotion();
-
-  const step = reducedMotion
-    ? { hidden: {}, visible: {} }
-    : {
-        hidden: { opacity: 0, y: 10 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' as const } },
-      };
-
-  const connector = reducedMotion
-    ? { hidden: {}, visible: {} }
-    : {
-        hidden: { scaleX: 0, scaleY: 0, opacity: 0 },
-        visible: {
-          scaleX: 1,
-          scaleY: 1,
-          opacity: 1,
-          transition: { duration: 0.35, ease: 'easeOut' as const },
-        },
-      };
+  const item = useRevealVariants(0.4);
 
   return (
-    <section className="section-loop-light px-5 py-14 sm:px-6 md:py-20">
+    <section
+      id="loop"
+      aria-labelledby="loop-title"
+      className="bg-gradient-to-b from-brand-bg to-brand-bg-deep px-5 py-14 sm:px-6
+                 md:px-10 md:py-26 lg:px-24"
+    >
       <m.div
         initial="hidden"
         whileInView="visible"
-        /* once: the loop reveals itself the first time it is reached and then
-           stays put. Replaying on every scroll past would be decoration. */
-        viewport={{ once: true, amount: 0.25 }}
-        transition={{ staggerChildren: 0.12 }}
-        className="mx-auto max-w-[1100px]"
+        viewport={REVEAL_VIEWPORT}
+        transition={{ staggerChildren: 0.1 }}
+        className="mx-auto max-w-[1248px]"
       >
-        <m.h2
-          variants={step}
-          className="text-center font-display text-[1.625rem] tracking-[0.07em]
-                     text-brand-accent md:text-[2rem]"
-        >
-          YOUR RUN. YOUR ADVENTURE.
-        </m.h2>
+        <SectionHeading id="loop-title" eyebrow="THE LOOP" variants={item} align="center">
+          Your run. <br className="md:hidden" />
+          Your adventure.
+        </SectionHeading>
 
-        <ol
-          className="mt-10 flex flex-col items-center gap-0
-                     md:mt-12 md:flex-row md:items-start"
-        >
-          {STEPS.map((entry, index) => (
-            <li
-              key={entry.label}
-              /* basis-0 via flex-1 makes every column the same width whatever
-                 its label wraps to, which is what lets the connector below be
-                 positioned from column centres. */
-              className="relative flex flex-col items-center md:flex-1"
-            >
-              <m.div
-                variants={step}
-                /*
-                 * Fixed width stacked vertically, column width once side by
-                 * side. Keeping the 168px box on desktop meant 5 x 168 = 840px
-                 * of unshrinkable content inside a 752px row just above the md
-                 * breakpoint, which scrolled the whole page sideways.
-                 */
-                className="flex w-[168px] shrink-0 flex-col items-center gap-2.5 px-2 text-center
-                           md:w-full md:min-w-0"
+        <div className="relative mt-7 md:mt-16">
+          {/* The thread, through the emblems' centres (half of the 96px emblem). */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-x-[10%] top-12 hidden h-px md:block
+                       bg-gradient-to-r from-brand-accent/10 via-brand-accent/55 to-brand-accent/10"
+          />
+
+          <ol className="relative flex flex-col gap-2 md:grid md:grid-cols-5 md:gap-4">
+            {STEPS.map((step) => (
+              <m.li
+                key={step.label}
+                variants={item}
+                className="flex items-center gap-4 md:flex-col md:gap-3.5 md:text-center"
               >
                 <img
-                  src={entry.icon}
+                  src={step.icon}
                   alt=""
-                  aria-hidden="true"
                   width={192}
                   height={192}
                   loading="lazy"
                   decoding="async"
-                  className="h-[72px] w-auto md:h-[80px]"
+                  className="size-16 shrink-0 object-contain md:size-24"
                 />
-                <span className="text-sm font-bold tracking-[0.1em] text-brand-ink text-balance">
-                  {entry.label}
-                </span>
-              </m.div>
-
-              {index < STEPS.length - 1 && (
-                /*
-                 * Vertical and in flow on mobile; on desktop it is taken out of
-                 * flow and anchored between two badge centres.
-                 *
-                 * In flow it could only ever start at the edge of the 168px
-                 * label box, ~50px clear of the badge it is supposed to touch,
-                 * and it needed a magic top margin to guess the badge's
-                 * half-height. Here `left: 50% + 2.75rem` leaves this badge and
-                 * `right: -50% + 2.75rem` reaches the next column's centre and
-                 * stops just short of its badge, so the line meets the artwork
-                 * at both ends and stays put whatever the labels do.
-                 *
-                 * top-10 is the badge's own half-height (md:h-[80px]).
-                 */
-                <m.span
-                  aria-hidden="true"
-                  variants={connector}
-                  className="my-3 block h-6 w-px shrink-0 origin-top
-                             bg-gradient-to-b from-brand-accent/60 to-brand-accent/10
-                             md:absolute md:top-10 md:my-0 md:h-px md:w-auto md:origin-left
-                             md:left-[calc(50%+2.75rem)] md:right-[calc(-50%+2.75rem)]
-                             md:bg-gradient-to-r md:from-brand-accent/50 md:to-brand-accent/15"
-                />
-              )}
-            </li>
-          ))}
-        </ol>
+                <div className="flex flex-col gap-1 md:items-center md:gap-2">
+                  <span className="text-sm font-extrabold tracking-[0.12em] md:text-[0.9375rem]">
+                    {step.label}
+                  </span>
+                  <span className="text-[0.9375rem] leading-normal text-brand-ink-dim md:max-w-[190px]">
+                    {step.detail}
+                  </span>
+                </div>
+              </m.li>
+            ))}
+          </ol>
+        </div>
       </m.div>
     </section>
   );

@@ -1,106 +1,87 @@
-import { m, useReducedMotion } from 'framer-motion';
+import { m } from 'framer-motion';
+import { useRevealVariants } from '../lib/reveal';
 import { EarlyAccessForm } from './EarlyAccessForm';
 import { HeroVideo } from './HeroVideo';
+import { SiteHeader } from './SiteHeader';
+
+/** A short stagger on first paint. */
+const STAGGER = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
+};
 
 /**
  * Everything a visitor needs in order to decide, in one screen.
  *
- * The form sits ABOVE the video, which inverts the usual trailer-then-CTA order,
- * for an arithmetic reason: the clip is 1:2.18, so on a 375px phone it is several
- * hundred pixels tall and anything below it starts far under the fold. Wordmark,
- * headline, pitch and form come to roughly 530px -- the CTA is reachable without
- * scrolling, and the video crests the fold just enough to pull the visitor down.
+ * The game's night-road painting fills the section (see `scene-hero`): full
+ * bleed from md up, a fixed band at the top on phones with the copy reading on
+ * solid night below it.
  *
- * Someone who only wants the proof still gets it: the video is the next thing
- * they see, and the closing CTA sends them back up to this same form.
+ * On phones the form sits ABOVE the video, for an arithmetic reason: the clip
+ * is roughly 1:2.2, so on a 375px phone it is several hundred pixels tall and
+ * anything below it starts far under the fold. The CTA stays reachable without
+ * scrolling, and the video is the next thing the visitor sees.
  */
 export function Hero() {
-  const reducedMotion = useReducedMotion();
-
-  // A short stagger on first paint. Under reduced motion every child renders in
-  // its final state instead -- no fade, no travel.
-  const container = {
-    hidden: {},
-    visible: { transition: { staggerChildren: 0.09, delayChildren: 0.05 } },
-  };
-  const item = reducedMotion
-    ? { hidden: {}, visible: {} }
-    : {
-        hidden: { opacity: 0, y: 12 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
-      };
+  const item = useRevealVariants();
 
   return (
     /*
-     * overflow-x-clip contains the video's decorative glow. Its -inset-8 (32px)
-     * always exceeds the section's 20-24px padding, so wherever the video column
-     * sits flush against the container edge the halo pushed the document wider
-     * than the viewport and the whole page scrolled sideways.
-     *
-     * `clip` rather than `hidden`: it does not create a scroll container, and
-     * pairing it with the default overflow-y: visible is legal, so nothing gets
-     * clipped vertically.
+     * overflow-x-clip contains the video's decorative halo, which is wider than
+     * the column it sits in. `clip` rather than `hidden`: it does not create a
+     * scroll container, so nothing gets clipped vertically.
      */
-    <section className="section-hero-light overflow-x-clip px-5 pt-8 pb-12 sm:px-6 md:pt-12 md:pb-20">
-      <m.div
-        variants={container}
-        initial="hidden"
-        animate="visible"
-        className="mx-auto grid max-w-[1100px] items-center gap-8
-                   md:grid-cols-[minmax(0,1fr)_auto] md:gap-14"
-      >
-        <div className="text-center md:text-left">
-          {/* The wordmark is the logo, not a nav bar: no links around it, nothing
-              sticky, no header chrome. */}
-          <m.img
-            variants={item}
-            src="/assets/logo/wordmark.png"
-            alt="Kinteras"
-            width={447}
-            height={128}
-            /* Native width is 447px, so 180-200 CSS px is already a 2x asset. */
-            className="mx-auto h-auto w-[180px] md:mx-0 md:w-[210px]"
-            fetchPriority="high"
-          />
+    <section className="scene-hero overflow-x-clip px-5 pb-14 sm:px-6 md:px-10 md:pb-24 lg:px-24">
+      <div className="mx-auto max-w-[1248px]">
+        <SiteHeader />
 
-          <m.h1
-            variants={item}
-            className="mt-8 text-[2.75rem] leading-[1.02] font-extrabold tracking-[-0.02em]
-                       text-balance sm:text-5xl md:mt-10 md:text-[4.25rem] lg:text-[4.75rem]"
-          >
-            {/* Two lines on small screens, one on wide ones: the break is where
-                the sentence breaks, not wherever the box happens to run out. */}
-            YOUR RUN
-            <br />
-            BECOMES AN RPG.
-          </m.h1>
-
-          <m.p
-            variants={item}
-            className="mx-auto mt-6 max-w-[500px] text-lg leading-relaxed text-brand-ink-dim
-                       text-pretty md:mx-0"
-          >
-            Run in the real world. Level your creatures. Discover encounters. Fight your way
-            through the world.
-          </m.p>
-
-          <m.div variants={item} className="mt-8 md:mt-12">
-            <h2
-              id="early-access"
-              className="font-display text-xl tracking-[0.08em] text-brand-accent"
+        <m.div
+          variants={STAGGER}
+          initial="hidden"
+          animate="visible"
+          className="grid items-center gap-14 pt-[200px] md:grid-cols-[minmax(0,1fr)_auto]
+                     md:gap-16 md:pt-16 lg:gap-20 lg:pt-20"
+        >
+          <div className="flex max-w-[700px] flex-col gap-5 md:gap-7">
+            <m.p
+              variants={item}
+              className="inline-flex items-center gap-3 font-display text-xs font-semibold
+                         tracking-[0.22em] text-brand-accent md:text-[0.9375rem]"
             >
-              JOIN THE EARLY ACCESS
-            </h2>
-            <div className="mt-4 max-w-[520px] md:max-w-none">
-              <EarlyAccessForm />
-            </div>
-          </m.div>
-        </div>
+              <span aria-hidden="true" className="block h-px w-6 bg-brand-accent md:w-9" />
+              THE RUNNING RPG
+            </m.p>
 
-        <m.div variants={item} className="flex justify-center md:justify-end">
-          <HeroVideo />
+            <m.h1
+              variants={item}
+              className="font-display text-[2.875rem] leading-[1.02] font-bold text-balance
+                         text-brand-ink-warm sm:text-6xl md:text-[4.5rem] md:leading-[0.98]
+                         lg:text-[5.75rem]"
+            >
+              Your run becomes an RPG.
+            </m.h1>
+
+            <m.p
+              variants={item}
+              className="max-w-[520px] text-[1.0625rem] leading-relaxed text-pretty text-[#c3cedd]
+                         md:text-[1.3125rem]"
+            >
+              Run in the real world. Level your creatures. Discover encounters. Fight your way
+              through the world.
+            </m.p>
+
+            {/* The anchor every "Early access" link and the closing CTA land on. */}
+            <m.div variants={item} id="early-access" className="mt-1 max-w-[560px] md:mt-3">
+              <h2 className="screen-reader-only">Join the Early Access</h2>
+              <EarlyAccessForm />
+            </m.div>
+          </div>
+
+          <m.div variants={item} className="flex justify-center md:justify-end">
+            <HeroVideo />
+          </m.div>
         </m.div>
-      </m.div>
+      </div>
     </section>
   );
 }

@@ -97,7 +97,17 @@ export function EarlyAccessForm() {
         Email address
       </label>
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      {/*
+        Stacked on phones. From sm up the field and the button share one
+        capsule, so the pair reads as a single control rather than two widgets;
+        the capsule, not the field, carries the focus colour there.
+      */}
+      <div
+        className="flex flex-col gap-3 sm:flex-row sm:gap-2.5 sm:rounded-[18px] sm:border
+                   sm:border-brand-border-strong sm:bg-brand-bg-deep/75 sm:p-2
+                   sm:shadow-[0_20px_60px_rgba(0,0,0,0.35)] sm:transition-colors
+                   sm:focus-within:border-brand-accent/70"
+      >
         <input
           id="early-access-email"
           name="email"
@@ -127,7 +137,9 @@ export function EarlyAccessForm() {
                      bg-brand-surface/85 px-5 text-base text-brand-ink
                      placeholder:text-brand-ink-dim/85
                      transition-colors focus:border-brand-accent/70 focus:outline-none
-                     disabled:opacity-60"
+                     disabled:opacity-60
+                     sm:h-[52px] sm:border-transparent sm:bg-transparent sm:px-4
+                     sm:focus:border-transparent"
         />
 
         {/*
@@ -157,7 +169,7 @@ export function EarlyAccessForm() {
           className="inline-flex h-[54px] items-center justify-center gap-2.5 rounded-[14px]
                      bg-brand-accent px-7 text-sm font-extrabold tracking-[0.12em] text-[#1a1206]
                      transition-colors hover:bg-brand-accent-dim
-                     disabled:cursor-not-allowed disabled:opacity-70 sm:px-8"
+                     disabled:cursor-not-allowed disabled:opacity-70 sm:h-[52px] sm:rounded-xl sm:px-7"
         >
           {isLoading && (
             <span

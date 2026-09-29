@@ -4,25 +4,28 @@
  * Self-hosted rather than pulled from Google Fonts: the landing's whole job is
  * to be fast, and a webfont on a third-party origin costs a DNS lookup plus a
  * TLS handshake before the first byte of text can render. Latin subset only --
- * the page is English.
+ * the page is English. Both are variable fonts (from Fontsource, SIL OFL), so
+ * one file covers every weight the page uses.
  */
 @font-face {
-  font-family: 'Inter';
+  font-family: 'Figtree';
   font-style: normal;
-  font-weight: 400 800;
+  font-weight: 300 900;
   font-display: swap;
-  src: url('/fonts/inter-latin.woff2') format('woff2');
+  src: url('/fonts/figtree-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
 }
 
+/* Cinzel carries the headline and every section title: an engraved capital
+   face, the closest match to the wordmark's lettering. */
 @font-face {
-  font-family: 'MedievalSharp';
+  font-family: 'Cinzel';
   font-style: normal;
-  font-weight: 400;
+  font-weight: 400 900;
   font-display: swap;
-  src: url('/fonts/medievalsharp-latin.woff2') format('woff2');
+  src: url('/fonts/cinzel-latin.woff2') format('woff2');
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
     U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
     U+FEFF, U+FFFD;
@@ -35,6 +38,8 @@
  */
 @theme {
   --color-brand-bg: #0c1230;
+  /* The night the page sinks into between lit sections. */
+  --color-brand-bg-deep: #070a1f;
   --color-brand-surface: #171f4a;
   --color-brand-surface-alt: #1f2960;
   --color-brand-border: #2a3580;
@@ -45,12 +50,14 @@
   --color-brand-accent-dim: #d97706;
 
   /* Text. The secondary tone is a notch lighter than the usual #93a4b8 so it
-     clears AA against #0c1230 with margin rather than by a hair. */
+     clears AA against #0c1230 with margin rather than by a hair. Headlines use
+     a warm parchment white, so they sit with the gold instead of against it. */
   --color-brand-ink: #f3f6fa;
+  --color-brand-ink-warm: #f7f3e8;
   --color-brand-ink-dim: #9fb0c4;
 
-  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-display: 'MedievalSharp', ui-serif, serif;
+  --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Cinzel', ui-serif, Georgia, serif;
 }
 
 @layer base {
@@ -66,12 +73,9 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     /*
-     * Flat on purpose. The washes used to live here with
-     * background-attachment: fixed, which pins them to the viewport -- so the
-     * same violet sat in the same corner through the whole scroll and every
-     * section ended up lit identically. Each section now carries its own light
-     * (see the .section-* utilities below), which is what makes the page read
-     * as a sequence of places rather than one long slab.
+     * Flat on purpose. Each section carries its own light (see the scene
+     * utilities below), which is what makes the page read as a sequence of
+     * places rather than one long slab.
      */
   }
 
@@ -102,40 +106,62 @@
 }
 
 /*
- * Per-section lighting. Kept as utilities rather than inline arbitrary values
- * because these three are a set -- they are meant to be read, and adjusted,
- * against each other.
+ * Scene backgrounds: the game's night-road painting behind the hero and the
+ * closing ask. Kept as utilities rather than inline arbitrary values because
+ * the gradients and the image are one composition, tuned together.
  */
 
-/* Hero: violet from the top-left, blue answering on the right. */
-@utility section-hero-light {
+/* Phones: the painting sits at the top at a fixed height, and the copy below
+   reads on solid night. Wider: full-bleed, darkened from the left where the
+   copy is, and fading into the page at the bottom. */
+@utility scene-hero {
+  background-color: var(--color-brand-bg);
   background-image:
-    radial-gradient(70% 55% at 12% -8%, rgba(124, 58, 237, 0.26), transparent 62%),
-    radial-gradient(55% 50% at 92% 18%, rgba(59, 130, 246, 0.2), transparent 58%);
+    linear-gradient(
+      180deg,
+      rgba(7, 10, 31, 0.6) 0%,
+      rgba(7, 10, 31, 0.35) 30%,
+      rgba(7, 10, 31, 0.88) 62%,
+      var(--color-brand-bg) 100%
+    ),
+    url('/assets/scenes/night-road.webp');
+  background-size: auto 520px;
   background-repeat: no-repeat;
+  background-position: 62% 0;
+
+  @variant md {
+    background-image:
+      linear-gradient(
+        90deg,
+        rgba(7, 10, 31, 0.94) 0%,
+        rgba(7, 10, 31, 0.78) 38%,
+        rgba(7, 10, 31, 0.25) 70%,
+        rgba(7, 10, 31, 0.35) 100%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(7, 10, 31, 0.55) 0%,
+        rgba(7, 10, 31, 0) 22%,
+        rgba(7, 10, 31, 0) 70%,
+        var(--color-brand-bg) 100%
+      ),
+      url('/assets/scenes/night-road.webp');
+    background-size: cover;
+    background-position: center 30%;
+  }
 }
 
-/* Loop: a shade deeper than the page, so the sequence feels like its own room.
-   A long ramp on both ends rather than a flat fill -- nothing separates this
-   section from the hero but this light, so its onset must not be locatable. */
-@utility section-loop-light {
-  background-image: linear-gradient(
-    180deg,
-    rgba(4, 7, 20, 0) 0%,
-    rgba(4, 7, 20, 0.62) 38%,
-    rgba(4, 7, 20, 0.62) 66%,
-    rgba(4, 7, 20, 0) 100%
-  );
-}
-
-/* Final CTA: light comes back up behind the closing ask.
-   Both centres sit far enough inside the box that each gradient has reached
-   full transparency before the edge. Centred at 20% with a 60% radius, the
-   violet was still at half strength where the section began and drew a hard
-   line across the page. */
-@utility section-cta-light {
+/* The same painting, lower down the road, heavily veiled behind the last ask. */
+@utility scene-cta {
+  background-color: var(--color-brand-bg-deep);
   background-image:
-    radial-gradient(58% 70% at 50% 58%, rgba(59, 130, 246, 0.2), transparent 68%),
-    radial-gradient(46% 58% at 26% 46%, rgba(124, 58, 237, 0.18), transparent 66%);
-  background-repeat: no-repeat;
+    linear-gradient(
+      180deg,
+      var(--color-brand-bg) 0%,
+      rgba(11, 16, 48, 0.7) 35%,
+      rgba(7, 10, 31, 0.88) 100%
+    ),
+    url('/assets/scenes/night-road.webp');
+  background-size: cover;
+  background-position: 70% 70%;
 }

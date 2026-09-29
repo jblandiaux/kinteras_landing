@@ -29,16 +29,22 @@ export function FinalCta() {
   }
 
   return (
-    <section className="section-cta-light px-5 py-16 sm:px-6 md:py-20">
+    <section className="scene-cta px-5 py-24 sm:px-6 md:py-40">
       <m.div
         initial={reducedMotion ? false : { opacity: 0, y: 12 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.4 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="mx-auto max-w-[640px] text-center"
+        className="mx-auto flex max-w-[900px] flex-col items-center gap-5 text-center md:gap-7"
       >
-        <p className="text-3xl leading-tight font-extrabold tracking-[-0.01em] text-balance md:text-4xl">
-          READY TO TURN YOUR RUNS INTO AN ADVENTURE?
+        <h2
+          className="font-display text-[2rem] leading-[1.12] font-bold text-balance text-brand-ink-warm
+                     md:text-[3.75rem] md:leading-[1.08]"
+        >
+          Ready to turn your runs into an adventure?
+        </h2>
+        <p className="text-base text-[#c3cedd] md:text-[1.1875rem]">
+          Early access opens soon. Be first through the gate.
         </p>
 
         <m.button
@@ -47,7 +53,7 @@ export function FinalCta() {
           whileHover={reducedMotion ? undefined : { scale: 1.02 }}
           whileTap={reducedMotion ? undefined : { scale: 0.98 }}
           transition={{ type: 'spring', stiffness: 400, damping: 26 }}
-          className="mt-8 inline-flex h-[54px] items-center justify-center rounded-[14px]
+          className="mt-1 inline-flex h-[54px] w-full items-center justify-center rounded-[14px] sm:w-auto
                      bg-brand-accent px-9 text-sm font-extrabold tracking-[0.12em] text-[#1a1206]
                      transition-colors hover:bg-brand-accent-dim"
         >

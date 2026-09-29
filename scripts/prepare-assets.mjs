@@ -159,9 +159,9 @@ const og = await sharp(backdrop).composite(layers).png({ compressionLevel: 9 }).
 console.log(`  og.png: ${og.width}x${og.height}, ${(og.size / 1024).toFixed(1)} KB`);
 
 // 4. Gameplay loop icons -------------------------------------------------
-// The game's achievement-category badges, not its nav icons: the badges are one
-// consistent gold-framed hexagon family that sits naturally next to the gold
-// wordmark, whereas the nav set is flat cartoon stickers in a different idiom.
+// The game's achievement-category emblems, the same art the app shows today, so
+// the loop on the page matches what a player meets in the game. Explore uses the
+// compass (discovery) rather than the globe (world): it reads as "go further".
 const GAME_ASSETS =
   process.env.SOURCE_GAME_ASSETS ?? '../Kinetra_frontend/public/assets';
 const CATEGORY = `${GAME_ASSETS}/achievements/category`;
@@ -171,7 +171,7 @@ const LOOP_ICONS = [
   ['loot', 'mastery.png'],
   ['creatures', 'beasts.png'],
   ['fight', 'combat.png'],
-  ['explore', 'world.png'],
+  ['explore', 'discovery.png'],
 ];
 
 /**
@@ -214,4 +214,42 @@ for (const [name, file] of LOOP_ICONS) {
     `  icons/${name}.webp: ${info.width}x${info.height}, ${(info.size / 1024).toFixed(1)} KB` +
       (meta.hasAlpha ? '' : ' (keyed)'),
   );
+}
+
+// 5. Game art for the content sections -----------------------------------
+// Scenes, zone banners, creatures and element glyphs, all straight from the
+// game. WebP everywhere except the element glyphs: at 64px a palette PNG is
+// smaller than any WebP that keeps their outline crisp.
+const ART = 'public/assets';
+
+/** [source under GAME_ASSETS, output under public/assets, max width] */
+const WEBP_ART = [
+  ['backgrounds/quest_hero.png', 'scenes/night-road.webp', 1600],
+  ['backgrounds/zones/Kinteras_WorldMap.png', 'scenes/world-map.webp', 688],
+  ...['awakened-plains', 'ash-caverns', 'frozen-ruins', 'storm-isles', 'ardent-nexus'].map(
+    (zone) => [`backgrounds/zones/banner/${zone}.png`, `zones/${zone}.webp`, 900],
+  ),
+  // 384px covers a ~190px-wide card image at 2x.
+  ...['pyrodrake', 'tsunamion', 'voltguard', 'tectonarch', 'verdant_oracle'].map(
+    (creature) => [`creatures/No_BG/${creature}.png`, `creatures/${creature}.webp`, 384],
+  ),
+];
+
+for (const [src, out, maxWidth] of WEBP_ART) {
+  const dest = `${ART}/${out}`;
+  await mkdir(dest.slice(0, dest.lastIndexOf('/')), { recursive: true });
+  const info = await sharp(`${GAME_ASSETS}/${src}`)
+    .resize({ width: maxWidth, withoutEnlargement: true })
+    .webp({ quality: 80, effort: 6 })
+    .toFile(dest);
+  console.log(`  ${out}: ${info.width}x${info.height}, ${(info.size / 1024).toFixed(1)} KB`);
+}
+
+await mkdir(`${ART}/elements`, { recursive: true });
+for (const element of ['fire', 'water', 'electric', 'stone', 'nature']) {
+  const info = await sharp(`${GAME_ASSETS}/elements/${element}.png`)
+    .resize({ width: 64, height: 64, fit: 'inside', withoutEnlargement: true })
+    .png({ compressionLevel: 9, palette: true })
+    .toFile(`${ART}/elements/${element}.png`);
+  console.log(`  elements/${element}.png: ${info.width}x${info.height}, ${(info.size / 1024).toFixed(1)} KB`);
 }

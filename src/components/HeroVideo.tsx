@@ -4,7 +4,7 @@ import { useReducedMotion } from 'framer-motion';
 const VIDEO_SRC = '/video/landing_page.mp4';
 
 /** The clip's real pixel dimensions -- narrower than 9:16, so it must be stated. */
-const VIDEO_WIDTH = 496;
+const VIDEO_WIDTH = 492;
 const VIDEO_HEIGHT = 1080;
 
 /**
@@ -12,7 +12,7 @@ const VIDEO_HEIGHT = 1080;
  *
  * Two things drive the implementation.
  *
- * Sizing is driven by HEIGHT, not width. At 496x1080 the clip is roughly 1:2.18,
+ * Sizing is driven by HEIGHT, not width. At 492x1080 the clip is roughly 1:2.2,
  * so a width-driven box explodes vertically -- full-bleed on a 375px phone would
  * be 712px tall and push the signup form off the screen entirely. Bounding the
  * height and letting width follow from the aspect ratio keeps the hero inside one
@@ -61,17 +61,12 @@ export function HeroVideo() {
   return (
     <div className="relative shrink-0">
       {/*
-        Staging, in two layers, so the clip reads as "here is the product"
-        rather than as a video dropped onto the background.
+        Staging: a gold-and-violet halo behind the device, the page's accent
+        light, so the phone reads as lit by the painting rather than pasted on.
 
-        A flat blurred rectangle was not enough: it fades uniformly and the
-        frame still looked isolated on a dark page. A radial falls off from the
-        centre of the device, and the ellipse underneath gives the frame
-        something to stand on.
-
-        Both are static. A halo that pulses next to a playing video is two
-        things competing for the same attention -- and the hero section's
-        overflow-x-clip is what lets them spill wider than the frame without
+        Static. A halo that pulses next to a playing video is two things
+        competing for the same attention -- and the hero section's
+        overflow-x-clip is what lets it spill wider than the frame without
         widening the document.
 
         No blur filter on the ambient layer: a radial gradient is already a soft
@@ -85,51 +80,46 @@ export function HeroVideo() {
       */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -inset-x-20 -inset-y-14
-                   bg-[radial-gradient(56%_46%_at_50%_46%,rgba(59,130,246,0.5),transparent_70%),radial-gradient(42%_36%_at_28%_20%,rgba(139,92,246,0.42),transparent_68%)]"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-7 left-1/2 h-14 w-[135%]
-                   -translate-x-1/2 rounded-[50%] blur-xl
-                   bg-[radial-gradient(50%_50%_at_50%_50%,rgba(59,130,246,0.5),transparent_70%)]"
+        className="pointer-events-none absolute -inset-x-20 -inset-y-10
+                   bg-[radial-gradient(50%_36%_at_50%_52%,rgba(251,191,36,0.26),transparent_70%),radial-gradient(46%_40%_at_50%_58%,rgba(124,58,237,0.16),transparent_72%)]"
       />
 
+      {/*
+        The device: a thin gold-rimmed bezel, so the clip reads as the app in
+        hand rather than a video dropped onto the painting.
+      */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-brand-border
-                   bg-brand-surface shadow-[0_28px_70px_-20px_rgba(0,0,0,0.85)]
-                   h-[min(58vh,540px)] md:h-[min(72vh,660px)]"
-        style={{ aspectRatio: `${VIDEO_WIDTH} / ${VIDEO_HEIGHT}` }}
+        className="relative rounded-[40px] border border-brand-accent/40 bg-[#04061a] p-1.5
+                   shadow-[0_40px_100px_rgba(0,0,0,0.6)] md:rounded-[52px] md:p-2"
       >
-        <video
-          ref={videoRef}
-          poster="/video/poster.webp"
-          width={VIDEO_WIDTH}
-          height={VIDEO_HEIGHT}
-          muted
-          loop
-          playsInline
-          // Decorative: everything it shows is stated in the headline and the
-          // gameplay loop, so it carries no information of its own.
-          aria-hidden="true"
-          tabIndex={-1}
-          preload="none"
-          className="size-full object-cover"
-        />
-
-        {/* Vignette: softens the clip's own hard edges into the frame. */}
         <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 rounded-3xl
-                     shadow-[inset_0_0_60px_18px_rgba(7,11,31,0.55)]"
-        />
+          className="relative overflow-hidden rounded-[34px] bg-brand-surface md:rounded-[44px]
+                     h-[min(62vh,498px)] md:h-[min(74vh,668px)]"
+          style={{ aspectRatio: `${VIDEO_WIDTH} / ${VIDEO_HEIGHT}` }}
+        >
+          <video
+            ref={videoRef}
+            poster="/video/poster.webp"
+            width={VIDEO_WIDTH}
+            height={VIDEO_HEIGHT}
+            muted
+            loop
+            playsInline
+            // Decorative: everything it shows is stated in the headline and the
+            // gameplay loop, so it carries no information of its own.
+            aria-hidden="true"
+            tabIndex={-1}
+            preload="none"
+            className="size-full object-cover"
+          />
 
-        {/* Suppresses the poster-to-first-frame flash on slower connections. */}
-        <div
-          aria-hidden="true"
-          className={`pointer-events-none absolute inset-0 bg-brand-bg/25 transition-opacity
-                      duration-500 ${playing ? 'opacity-0' : 'opacity-100'}`}
-        />
+          {/* Suppresses the poster-to-first-frame flash on slower connections. */}
+          <div
+            aria-hidden="true"
+            className={`pointer-events-none absolute inset-0 bg-brand-bg/25 transition-opacity
+                        duration-500 ${playing ? 'opacity-0' : 'opacity-100'}`}
+          />
+        </div>
       </div>
     </div>
   );

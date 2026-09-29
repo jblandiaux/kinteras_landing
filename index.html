@@ -15,15 +15,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 
-    <!-- Inter carries the headline, so it is on the critical path; MedievalSharp
-         only styles section titles further down and can arrive with the rest. -->
+    <!-- Cinzel carries the headline and the night-road painting is the hero's
+         backdrop: both are on the critical path. Figtree (body copy) is small
+         and swaps in with the rest. -->
     <link
       rel="preload"
       as="font"
       type="font/woff2"
-      href="/fonts/inter-latin.woff2"
+      href="/fonts/cinzel-latin.woff2"
       crossorigin
     />
+    <link rel="preload" as="image" href="/assets/scenes/night-road.webp" />
     <!-- The poster is what fills the video frame before the clip is fetched, and
          under reduced motion it is the only thing that ever fills it. -->
     <link rel="preload" as="image" href="/video/poster.webp" />

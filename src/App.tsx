@@ -1,6 +1,10 @@
 import { LazyMotion } from 'framer-motion';
 import { Hero } from './components/Hero';
+import { FactBand } from './components/FactBand';
 import { GameplayLoop } from './components/GameplayLoop';
+import { Creatures } from './components/Creatures';
+import { World } from './components/World';
+import { HowItWorks } from './components/HowItWorks';
 import { FinalCta } from './components/FinalCta';
 import { Footer } from './components/Footer';
 import { ConsentBanner } from './components/ConsentBanner';
@@ -35,7 +39,11 @@ export function App() {
     <LazyMotion features={loadMotionFeatures} strict>
       <main>
         <Hero />
+        <FactBand />
         <GameplayLoop />
+        <Creatures />
+        <World />
+        <HowItWorks />
         <FinalCta />
       </main>
       <Footer />
