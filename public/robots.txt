@@ -1,0 +1,7 @@
+# Everything public is meant to be indexed. The API and the analytics proxy
+# have nothing a crawler should fetch. Not a security control: it only asks.
+User-agent: *
+Disallow: /api/
+Disallow: /summon/
+
+Sitemap: https://kinteras.app/sitemap.xml
