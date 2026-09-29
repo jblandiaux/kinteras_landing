@@ -22,15 +22,51 @@ const VIDEO_HEIGHT = 1080;
  * from an IntersectionObserver rather than sitting in the markup, because both a
  * plain `src` and `preload="metadata"` already let the browser start pulling the
  * megabyte down.
+ *
+ * Autoplay is a request, not a guarantee. iOS refuses it outright -- even muted,
+ * even in plain HTML -- under Low Data Mode or Low Power Mode, and reduced motion
+ * never asks for it. In every such case a Play button appears over the poster:
+ * a tap is a user gesture, which the browser always honours.
  */
+type Playback = 'idle' | 'playing' | 'blocked';
+
+/**
+ * Mutes and loads the clip. React sets the `muted` PROPERTY but never renders
+ * the attribute, and WebKit (Safari, and every iOS browser, Chrome included)
+ * judges autoplay by the attribute, so all three are set before the source is
+ * attached.
+ */
+function attachSource(video: HTMLVideoElement) {
+  if (video.getAttribute('src')) return;
+  video.defaultMuted = true;
+  video.muted = true;
+  video.setAttribute('muted', '');
+  video.src = VIDEO_SRC;
+  video.load();
+}
+
+/** Loads if needed, then plays; reports whether the browser allowed it. */
+function startPlayback(video: HTMLVideoElement, report: (playback: Playback) => void) {
+  attachSource(video);
+  void video.play().then(
+    () => report('playing'),
+    () => report('blocked'),
+  );
+}
+
 export function HeroVideo() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const reducedMotion = useReducedMotion();
-  const [playing, setPlaying] = useState(false);
+  const [playback, setPlayback] = useState<Playback>('idle');
+
+  function handlePlayClick() {
+    const video = videoRef.current;
+    if (video) startPlayback(video, setPlayback);
+  }
 
   useEffect(() => {
-    // Reduced motion: never fetch the clip at all. The poster carries the same
-    // impression, and the megabyte is saved rather than merely paused.
+    // Reduced motion: never fetch the clip unasked. The poster carries the same
+    // impression, and the Play button leaves the choice to the visitor.
     if (reducedMotion !== false) return;
 
     const video = videoRef.current;
@@ -40,25 +76,7 @@ export function HeroVideo() {
       (entries) => {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         observer.disconnect();
-
-        // React sets the `muted` PROPERTY but never renders the attribute, and
-        // WebKit (Safari, and every iOS browser, Chrome included) judges
-        // autoplay by the attribute: without it play() is refused with
-        // NotAllowedError, as if the clip had sound. Set all three before the
-        // source is attached so the element is muted from its first load.
-        video.defaultMuted = true;
-        video.muted = true;
-        video.setAttribute('muted', '');
-
-        video.src = VIDEO_SRC;
-        video.load();
-        // Autoplay can still be refused (data saver, low power mode). The poster
-        // stays up in that case, which is a fine outcome, so the rejection is
-        // swallowed rather than surfaced.
-        void video.play().then(
-          () => setPlaying(true),
-          () => setPlaying(false),
-        );
+        startPlayback(video, setPlayback);
       },
       { rootMargin: '300px 0px' },
     );
@@ -66,6 +84,9 @@ export function HeroVideo() {
     observer.observe(video);
     return () => observer.disconnect();
   }, [reducedMotion]);
+
+  const isPlaying = playback === 'playing';
+  const showPlayButton = playback === 'blocked' || (reducedMotion === true && !isPlaying);
 
   return (
     <div className="relative shrink-0">
@@ -126,8 +147,28 @@ export function HeroVideo() {
           <div
             aria-hidden="true"
             className={`pointer-events-none absolute inset-0 bg-brand-bg/25 transition-opacity
-                        duration-500 ${playing ? 'opacity-0' : 'opacity-100'}`}
+                        duration-500 ${isPlaying ? 'opacity-0' : 'opacity-100'}`}
           />
+
+          {showPlayButton && (
+            <button
+              type="button"
+              onClick={handlePlayClick}
+              aria-label="Play the gameplay video"
+              className="absolute top-1/2 left-1/2 flex size-16 -translate-x-1/2 -translate-y-1/2
+                         items-center justify-center rounded-full border border-white/45
+                         bg-brand-bg-deep/60 backdrop-blur-sm transition-colors
+                         hover:border-brand-accent hover:bg-brand-bg-deep/80 md:size-[76px]"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="size-6 translate-x-0.5 fill-brand-ink-warm md:size-[26px]"
+              >
+                <path d="M8 5.5v13l11-6.5z" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
     </div>

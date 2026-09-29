@@ -339,7 +339,18 @@ the painting covers the section and is darkened from the left where the copy is.
 **Creatures scroll sideways below lg** (snap row), then become a five-column grid.
 **The world map is md-up only**: on a phone it would restate the zone banners.
 
-**The clip is never fetched until it is nearly in view**, and never at all under
+**The clip is never fetched until it is nearly in view**, and never unasked under
 `prefers-reduced-motion` — `src` is assigned from an IntersectionObserver, because
 both a plain `src` and `preload="metadata"` already let the browser start pulling
 the megabyte down.
+
+**Autoplay can be refused, so there is a Play button.** iOS blocks even muted
+autoplay under Low Data Mode or Low Power Mode (verified: a bare
+`<video autoplay muted playsinline>` stays paused). When `play()` is rejected, and
+under reduced motion, a Play button sits over the poster; a tap is a user gesture,
+which is always allowed. The `muted` attribute is set by hand before loading,
+because React only sets the property and WebKit reads the attribute.
+
+**`/video/*` goes through the Worker** (`worker/video-range.ts`) for byte-range
+support: Workers static assets answer `Range` with a full 200, and iOS refuses to
+play a video from a server that does that.
