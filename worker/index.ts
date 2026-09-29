@@ -2,6 +2,7 @@ import { KNOWN_CONSENT_VERSIONS, MARKETING_CONSENT_VERSIONS } from '../shared/co
 import { addContactToBrevo } from './brevo';
 import { POSTHOG_PROXY_PREFIX, proxyToPostHog } from './posthog-proxy';
 import { withSecurityHeaders } from './security-headers';
+import { verifyTurnstile } from './turnstile';
 import { VIDEO_PREFIX, serveWithRanges } from './video-range';
 
 /**
@@ -139,6 +140,12 @@ async function handleEarlyAccess(request: Request, env: Env): Promise<Response> 
            .map(() => '?')
            .join(', ')})`
     : 'ON CONFLICT (email) DO NOTHING';
+
+  // Last gate before anything is written: siteverify costs a subrequest, so
+  // requests that fail the cheap checks above never spend one.
+  if (!(await verifyTurnstile(body.turnstile_token, request, env.TURNSTILE_SECRET))) {
+    return json({ success: false, error: 'verification_failed' }, 403);
+  }
 
   try {
     await env.DB.prepare(

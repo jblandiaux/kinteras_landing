@@ -3,12 +3,13 @@
 # /summon/*, /video/* -- never pass through this file; they get their headers
 # from worker/security-headers.ts.
 #
-# The CSP holds because the build has no inline script and nothing is loaded
-# from a third-party origin: PostHog goes through /summon on our own origin and
-# runs with disable_external_dependency_loading. 'unsafe-inline' on styles
+# The CSP holds because the build has no inline script and the only
+# third-party origin is Turnstile (challenges.cloudflare.com: its script and
+# its iframe). PostHog goes through /summon on our own origin and runs with
+# disable_external_dependency_loading. 'unsafe-inline' on styles
 # covers the style attributes framer-motion writes during animations.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

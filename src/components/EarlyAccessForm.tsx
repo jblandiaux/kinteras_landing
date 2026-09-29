@@ -1,8 +1,9 @@
-import { useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { CONSENT_TEXT } from '../../shared/consent';
 import { joinEarlyAccess, readAttribution } from '../lib/api';
 import { analytics } from '../lib/analytics';
+import { loadTurnstile, TURNSTILE_SITEKEY, type TurnstileApi } from '../lib/turnstile';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -12,6 +13,12 @@ type Status = 'idle' | 'loading' | 'success' | 'error';
  * submitted -> signup conversion ratio.
  */
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+
+/** Must match SIGNUP_ACTION in worker/turnstile.ts. */
+const TURNSTILE_ACTION = 'signup';
+
+type TurnstileWidget = { api: TurnstileApi; id: string };
+type PendingToken = { resolve: (token: string) => void; reject: (err: Error) => void };
 
 /**
  * The page's only conversion point.
@@ -26,6 +33,61 @@ export function EarlyAccessForm() {
   const [status, setStatus] = useState<Status>('idle');
   const honeypotRef = useRef<HTMLInputElement>(null);
   const reducedMotion = useReducedMotion();
+  const turnstileContainerRef = useRef<HTMLDivElement>(null);
+  const turnstileRef = useRef<TurnstileWidget | null>(null);
+  const pendingTokenRef = useRef<PendingToken | null>(null);
+
+  // The widget runs its challenge only when asked (execution: 'execute') and
+  // stays invisible unless Cloudflare needs the visitor to click something.
+  useEffect(() => {
+    let cancelled = false;
+    const settle = (outcome: string | Error) => {
+      const pending = pendingTokenRef.current;
+      pendingTokenRef.current = null;
+      if (!pending) return;
+      if (typeof outcome === 'string') pending.resolve(outcome);
+      else pending.reject(outcome);
+    };
+
+    loadTurnstile()
+      .then((api) => {
+        const container = turnstileContainerRef.current;
+        if (cancelled || !container) return;
+        const id = api.render(container, {
+          sitekey: TURNSTILE_SITEKEY,
+          action: TURNSTILE_ACTION,
+          execution: 'execute',
+          appearance: 'interaction-only',
+          callback: (token) => settle(token),
+          'error-callback': () => {
+            settle(new Error('turnstile_error'));
+            return true;
+          },
+          'timeout-callback': () => settle(new Error('turnstile_timeout')),
+        });
+        turnstileRef.current = { api, id };
+      })
+      .catch(() => {
+        // Submitting will report the failure; nothing to show before that.
+      });
+
+    return () => {
+      cancelled = true;
+      const widget = turnstileRef.current;
+      turnstileRef.current = null;
+      if (widget) widget.api.remove(widget.id);
+    };
+  }, []);
+
+  /** Runs the challenge and resolves with a fresh single-use token. */
+  function requestTurnstileToken(): Promise<string> {
+    const widget = turnstileRef.current;
+    if (!widget) return Promise.reject(new Error('turnstile_not_ready'));
+    return new Promise<string>((resolve, reject) => {
+      pendingTokenRef.current = { resolve, reject };
+      widget.api.execute(widget.id);
+    });
+  }
 
   // Read once at submit time rather than on mount: nothing rerenders on it and
   // the URL cannot change under a static page.
@@ -46,10 +108,12 @@ export function EarlyAccessForm() {
     analytics.capture('early_access_submitted');
     setStatus('loading');
     try {
+      const turnstileToken = await requestTurnstileToken();
       await joinEarlyAccess({
         email: trimmed,
         attribution: readAttribution(),
         honeypot: honeypotRef.current?.value ?? '',
+        turnstileToken,
       });
       analytics.capture('early_access_signup');
       setStatus('success');
@@ -57,6 +121,10 @@ export function EarlyAccessForm() {
       // The typed email stays in state and therefore in the input -- making
       // someone retype an address because our server hiccuped is gratuitous.
       setStatus('error');
+    } finally {
+      // The token is spent either way; a retry needs a fresh challenge.
+      const widget = turnstileRef.current;
+      if (widget) widget.api.reset(widget.id);
     }
   }
 
@@ -181,6 +249,9 @@ export function EarlyAccessForm() {
           {isLoading ? 'JOINING...' : 'JOIN KINTERAS'}
         </m.button>
       </div>
+
+      {/* Empty unless Cloudflare asks the visitor to confirm they are human. */}
+      <div ref={turnstileContainerRef} className="mt-3 empty:hidden" />
 
       {/*
         Rendered from shared/consent.ts, never retyped here: the stored

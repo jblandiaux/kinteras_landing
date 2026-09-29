@@ -4,3 +4,8 @@
 # In production this is set with:
 #   npx wrangler secret put BREVO_API_KEY
 BREVO_API_KEY=
+
+# The real widget secret (Cloudflare dashboard -> Turnstile -> the widget ->
+# Settings). The widget allows localhost, so the real pair works locally.
+# In production: npx wrangler secret put TURNSTILE_SECRET
+TURNSTILE_SECRET=

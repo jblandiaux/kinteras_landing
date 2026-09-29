@@ -63,7 +63,26 @@ It rejects a malformed address (`400 invalid_email`), an unknown consent version
 (`400 invalid_consent_version`), a foreign `Origin` (`403 forbidden_origin`), a
 non-POST (`405`), an oversized body (`413`), a non-JSON body
 (`415 unsupported_media_type`) and more than 5 submissions per IP per minute
-(`429 rate_limited`). A filled honeypot returns `200` and writes nothing.
+(`429 rate_limited`), and a missing or rejected Turnstile token
+(`403 verification_failed`). A filled honeypot returns `200` and writes nothing.
+
+### Turnstile
+
+The form carries a Cloudflare Turnstile widget (sitekey in `src/lib/turnstile.ts`,
+action `signup`). It runs its challenge only on submit and stays invisible unless
+Cloudflare wants a click. The Worker (`worker/turnstile.ts`) calls siteverify
+before writing anything and requires `success`, action `signup`, and a
+`hostname` equal to the one serving the request -- so production never accepts a
+token minted on localhost, although the widget allows localhost for local dev.
+
+It fails closed: without `TURNSTILE_SECRET`, or if siteverify is unreachable,
+**every signup is rejected**. Set the secret before deploying:
+
+```bash
+npx wrangler secret put TURNSTILE_SECRET   # value: dashboard -> Turnstile -> widget -> Settings
+```
+
+Locally, put the same value in `.dev.vars` (see `.dev.vars.example`).
 
 The throttle is the `SIGNUP_RATE_LIMITER` binding in `wrangler.jsonc`, not a
 dashboard rule: a dashboard rule was the original plan and was never created,
@@ -73,7 +92,8 @@ never stored.
 ## Security headers
 
 Static assets (the SPA, images, fonts) get theirs from `public/_headers`: a
-strict CSP (`'self'` only, no inline script), HSTS, `nosniff`,
+strict CSP (`'self'` plus `challenges.cloudflare.com` for Turnstile, no inline
+script), HSTS, `nosniff`,
 `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, COOP.
 Responses built by the Worker (`/api/*`, `/summon/*`, `/video/*`) never go
 through that file, so `worker/security-headers.ts` adds the non-CSP ones there.

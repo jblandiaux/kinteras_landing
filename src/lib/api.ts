@@ -52,6 +52,8 @@ export type SignupRequest = {
    * nothing and catch nobody.
    */
   honeypot: string;
+  /** Single-use Turnstile token for this submission. */
+  turnstileToken: string;
 };
 
 /**
@@ -68,6 +70,7 @@ export async function joinEarlyAccess({
   email,
   attribution,
   honeypot,
+  turnstileToken,
 }: SignupRequest): Promise<void> {
   const response = await fetch('/api/early-access', {
     method: 'POST',
@@ -77,6 +80,7 @@ export async function joinEarlyAccess({
       source: 'landing',
       consent_version: CONSENT_VERSION,
       website: honeypot,
+      turnstile_token: turnstileToken,
       ...attribution,
     }),
   });

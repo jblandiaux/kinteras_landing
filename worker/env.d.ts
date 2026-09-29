@@ -12,6 +12,11 @@
  */
 interface Env {
   BREVO_API_KEY?: string;
+  /**
+   * Turnstile widget secret (`wrangler secret put TURNSTILE_SECRET`). Unlike
+   * Brevo, missing is not a degraded mode: every signup is rejected until set.
+   */
+  TURNSTILE_SECRET?: string;
   /** Test-only override of the Brevo API origin. Never set in production. */
   BREVO_API_BASE?: string;
 }
