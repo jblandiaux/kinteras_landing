@@ -4,6 +4,8 @@
   "main": "./worker/index.ts",
   "compatibility_date": "2026-08-25",
   "assets": {
+    // Lets the Worker read built files itself; used only for /video/* below.
+    "binding": "ASSETS",
     // The landing is one HTML entry point; anything that is not a built file is
     // rewritten to index.html so /privacy resolves on a cold load, not just on
     // client-side navigation.
@@ -13,7 +15,9 @@
     // would be answered with index.html instead of reaching the Worker.
     // /summon/* is the PostHog reverse proxy. Without it listed here the SPA
     // fallback would answer analytics requests with index.html.
-    "run_worker_first": ["/api/*", "/summon/*"]
+    // /video/* goes through the Worker for byte-range support: asset serving
+    // answers `Range` with a full 200, and iOS Safari then refuses to play.
+    "run_worker_first": ["/api/*", "/summon/*", "/video/*"]
   },
   // Explicit, not left to the default. Adding a `routes` entry silently flips
   // this to false, which takes the workers.dev URL down -- and until the apex

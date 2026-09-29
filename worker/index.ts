@@ -1,13 +1,15 @@
 import { KNOWN_CONSENT_VERSIONS, MARKETING_CONSENT_VERSIONS } from '../shared/consent';
 import { addContactToBrevo } from './brevo';
 import { POSTHOG_PROXY_PREFIX, proxyToPostHog } from './posthog-proxy';
+import { VIDEO_PREFIX, serveWithRanges } from './video-range';
 
 /**
  * The whole server side of the landing: one endpoint that records an email.
  *
  * Static assets are served by the platform, not by this code -- `run_worker_first`
- * in wrangler.jsonc routes only /api/* here, everything else falls through to the
- * built SPA.
+ * in wrangler.jsonc routes only /api/*, the analytics proxy and /video/* here;
+ * everything else falls through to the built SPA. /video/* comes through only to
+ * gain byte-range support, which the platform's asset serving lacks.
  */
 
 /** Longest legal email address per RFC 5321. */
@@ -178,6 +180,11 @@ export default {
     // /api route at all.
     if (pathname === POSTHOG_PROXY_PREFIX || pathname.startsWith(`${POSTHOG_PROXY_PREFIX}/`)) {
       return proxyToPostHog(request, pathname);
+    }
+
+    // The hero clip: served here only so byte ranges work (see video-range.ts).
+    if (pathname.startsWith(VIDEO_PREFIX)) {
+      return serveWithRanges(request, env.ASSETS);
     }
 
     // Reached only for /api/* (see run_worker_first). Answering 404 in JSON
