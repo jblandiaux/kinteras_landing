@@ -60,8 +60,27 @@ notified and they will be, so reporting "this email already exists" would be a
 failure message for something that did not fail.
 
 It rejects a malformed address (`400 invalid_email`), an unknown consent version
-(`400 invalid_consent_version`), a non-POST (`405`) and an oversized body (`413`).
-A filled honeypot returns `200` and writes nothing.
+(`400 invalid_consent_version`), a foreign `Origin` (`403 forbidden_origin`), a
+non-POST (`405`), an oversized body (`413`), a non-JSON body
+(`415 unsupported_media_type`) and more than 5 submissions per IP per minute
+(`429 rate_limited`). A filled honeypot returns `200` and writes nothing.
+
+The throttle is the `SIGNUP_RATE_LIMITER` binding in `wrangler.jsonc`, not a
+dashboard rule: a dashboard rule was the original plan and was never created,
+which left the endpoint open to flooding. The IP is the limiter key only and is
+never stored.
+
+## Security headers
+
+Static assets (the SPA, images, fonts) get theirs from `public/_headers`: a
+strict CSP (`'self'` only, no inline script), HSTS, `nosniff`,
+`X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`, COOP.
+Responses built by the Worker (`/api/*`, `/summon/*`, `/video/*`) never go
+through that file, so `worker/security-headers.ts` adds the non-CSP ones there.
+
+The CSP holds only while nothing loads from a third-party origin. Adding an
+external script, font or embed means adding its origin to `public/_headers`,
+or it will be blocked.
 
 `BREVO_API_BASE` overrides the API origin so the consent boundary can be tested
 against a stub. Never set it in production.
@@ -164,9 +183,10 @@ npm run deploy
 Then, in the Cloudflare dashboard:
 
 1. **Custom domain** — attach `kinteras.app` to the Worker.
-2. **Rate limiting** — add a rule on `/api/early-access`. There is deliberately no
-   application-level throttle: it would mean carrying state for an endpoint that
-   writes one row, and the edge does it better.
+2. **Always Use HTTPS** — SSL/TLS → Edge Certificates → on. Without it
+   `http://kinteras.app` is served in clear instead of redirected (HSTS only
+   takes over after a first HTTPS visit). Rate limiting needs nothing here: it
+   ships with the Worker (see The endpoint).
 3. **Analytics** — nothing to do here. PostHog is wired in already; see the
    Analytics section below. Cloudflare Web Analytics was never installed and is
    not needed now that PostHog covers it.
@@ -235,6 +255,9 @@ nothing in the browser to suggest anything is wrong.
 to `eu-assets.i.posthog.com`. Served first-party, ad blockers see nothing they
 recognise. A path on the apex rather than a CNAME subdomain, because DNS-level
 blockers follow a subdomain's CNAME chain and a path has no chain to follow.
+
+The browser's `Cookie` header is dropped before forwarding: cookies are scoped to
+`.kinteras.app` and may include the app's, and PostHog needs none of them.
 
 Every proxied request is a Worker invocation, which is why feature flags,
 surveys, session replay and external dependency loading are all off in

@@ -38,6 +38,10 @@ export async function proxyToPostHog(request: Request, pathname: string): Promis
   const forwarded = new Request(url, request);
   // Without this the upstream sees `kinteras.app` and its routing/TLS breaks.
   forwarded.headers.set('Host', url.hostname);
+  // The SDK sends everything it needs in the body. The browser's cookies are
+  // scoped to .kinteras.app (cross_subdomain_cookie) and can include the app's;
+  // none of them has any business reaching a third party.
+  forwarded.headers.delete('Cookie');
 
   const response = await fetch(forwarded);
 

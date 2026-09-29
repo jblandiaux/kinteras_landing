@@ -1,6 +1,7 @@
 import { KNOWN_CONSENT_VERSIONS, MARKETING_CONSENT_VERSIONS } from '../shared/consent';
 import { addContactToBrevo } from './brevo';
 import { POSTHOG_PROXY_PREFIX, proxyToPostHog } from './posthog-proxy';
+import { withSecurityHeaders } from './security-headers';
 import { VIDEO_PREFIX, serveWithRanges } from './video-range';
 
 /**
@@ -51,6 +52,34 @@ function cleanTag(value: unknown, maxLength = MAX_UTM_LENGTH): string | null {
 async function handleEarlyAccess(request: Request, env: Env): Promise<Response> {
   if (request.method !== 'POST') {
     return json({ success: false, error: 'method_not_allowed' }, 405);
+  }
+
+  // Browsers always send Origin on a POST. A foreign one is another site
+  // trying to sign someone up through the visitor's browser.
+  const origin = request.headers.get('origin');
+  if (origin !== null && origin !== new URL(request.url).origin) {
+    return json({ success: false, error: 'forbidden_origin' }, 403);
+  }
+
+  // Requiring JSON also makes the request non-simple, so a plain cross-site
+  // <form> (text/plain, urlencoded) cannot reach the handler at all.
+  const contentType = request.headers.get('content-type') ?? '';
+  if (!contentType.toLowerCase().startsWith('application/json')) {
+    return json({ success: false, error: 'unsupported_media_type' }, 415);
+  }
+
+  // Keyed on the connecting IP, which is used for this check only and never
+  // stored. Checked before reading the body so a flood costs as little as
+  // possible.
+  const clientIp = request.headers.get('cf-connecting-ip') ?? 'unknown';
+  const { success: withinLimit } = await env.SIGNUP_RATE_LIMITER.limit({ key: clientIp });
+  if (!withinLimit) {
+    return json({ success: false, error: 'rate_limited' }, 429);
+  }
+
+  const declaredLength = Number(request.headers.get('content-length') ?? '0');
+  if (declaredLength > MAX_BODY_BYTES) {
+    return json({ success: false, error: 'payload_too_large' }, 413);
   }
 
   const raw = await request.text();
@@ -167,28 +196,32 @@ async function handleEarlyAccess(request: Request, env: Env): Promise<Response> 
   return json({ success: true });
 }
 
+async function route(request: Request, env: Env): Promise<Response> {
+  const { pathname } = new URL(request.url);
+
+  if (pathname === '/api/early-access' || pathname === '/api/early-access/') {
+    return handleEarlyAccess(request, env);
+  }
+
+  // Analytics traffic, served from our own origin so blockers see nothing
+  // they recognise. Checked before the /api 404 below because it is not an
+  // /api route at all.
+  if (pathname === POSTHOG_PROXY_PREFIX || pathname.startsWith(`${POSTHOG_PROXY_PREFIX}/`)) {
+    return proxyToPostHog(request, pathname);
+  }
+
+  // The hero clip: served here only so byte ranges work (see video-range.ts).
+  if (pathname.startsWith(VIDEO_PREFIX)) {
+    return serveWithRanges(request, env.ASSETS);
+  }
+
+  // Reached only for /api/* (see run_worker_first). Answering 404 in JSON
+  // keeps a typo'd endpoint from being handed the SPA's index.html.
+  return json({ success: false, error: 'not_found' }, 404);
+}
+
 export default {
   async fetch(request, env) {
-    const { pathname } = new URL(request.url);
-
-    if (pathname === '/api/early-access' || pathname === '/api/early-access/') {
-      return handleEarlyAccess(request, env);
-    }
-
-    // Analytics traffic, served from our own origin so blockers see nothing
-    // they recognise. Checked before the /api 404 below because it is not an
-    // /api route at all.
-    if (pathname === POSTHOG_PROXY_PREFIX || pathname.startsWith(`${POSTHOG_PROXY_PREFIX}/`)) {
-      return proxyToPostHog(request, pathname);
-    }
-
-    // The hero clip: served here only so byte ranges work (see video-range.ts).
-    if (pathname.startsWith(VIDEO_PREFIX)) {
-      return serveWithRanges(request, env.ASSETS);
-    }
-
-    // Reached only for /api/* (see run_worker_first). Answering 404 in JSON
-    // keeps a typo'd endpoint from being handed the SPA's index.html.
-    return json({ success: false, error: 'not_found' }, 404);
+    return withSecurityHeaders(await route(request, env));
   },
 } satisfies ExportedHandler<Env>;

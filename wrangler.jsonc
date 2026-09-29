@@ -37,6 +37,17 @@
     // still records signups in D1 and simply skips the push.
     "BREVO_LIST_ID": "6"
   },
+  // Per-IP throttle on the signup endpoint. A real visitor submits once or
+  // twice; this stops a script from flooding D1 and, through it, the Brevo
+  // list. Lives here rather than as a dashboard rule so it cannot be forgotten
+  // on a fresh deploy. `namespace_id` is any account-unique integer.
+  "ratelimits": [
+    {
+      "name": "SIGNUP_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 5, "period": 60 }
+    }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
