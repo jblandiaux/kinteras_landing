@@ -41,6 +41,15 @@ export function HeroVideo() {
         if (!entries.some((entry) => entry.isIntersecting)) return;
         observer.disconnect();
 
+        // React sets the `muted` PROPERTY but never renders the attribute, and
+        // WebKit (Safari, and every iOS browser, Chrome included) judges
+        // autoplay by the attribute: without it play() is refused with
+        // NotAllowedError, as if the clip had sound. Set all three before the
+        // source is attached so the element is muted from its first load.
+        video.defaultMuted = true;
+        video.muted = true;
+        video.setAttribute('muted', '');
+
         video.src = VIDEO_SRC;
         video.load();
         // Autoplay can still be refused (data saver, low power mode). The poster
